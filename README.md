@@ -22,6 +22,7 @@ First-Aid Visual Instructions: Offline emergency guides with step-by-step instru
 
 Offline Mode Support: Access emergency guides without an internet connection.
 
+
 ### Out of Scope
 
 Live veterinary consultations or messaging with vets.
@@ -29,6 +30,8 @@ Live veterinary consultations or messaging with vets.
 Financial transactions for veterinary services.
 
 Advanced biometric authentication beyond facial recognition.
+
+
 
 ## Tech Stack
 
@@ -46,35 +49,50 @@ Hosting: Firebase Hosting & Cloud Functions
 
 API Integrations: Google Maps (Location Services), DeepSeek AI (Symptom Checker)
 
+
+
 ## Project Structure
 
 FurrEverCare/
+
 │── backend/          # Java Spring Boot backend
+
 │── web/              # React frontend
+
 │── mobile/           # Kotlin Android app
+
 │── firebase/         # Firebase Firestore & Cloud Functions
+
 │── global/    # Logos, fonts, and reusable UI assets
+
 │── docs/             # Documentation (SRS, ERD, etc.)
+
+
 
 ## Installation & Setup
 
 ### 1 Clone the Repository
 
 git clone https://github.com/your-repo/FurrEverCare.git
+
 cd FurrEverCare
 
 
 ### 2 Backend Setup (Spring Boot)
 
 cd backend
+
 mvn clean install
+
 mvn spring-boot:run
 
 
 ### 3 Web App Setup (React.js)
 
 cd web
+
 npm install
+
 npm run dev
 
 
@@ -82,6 +100,7 @@ npm run dev
 ### 4 Mobile App Setup (Kotlin)
 
 Open mobile/ in Android Studio
+
 Sync Gradle and run the app
 
 
@@ -92,26 +111,10 @@ Configure Firestore rules in firebase/firestore-rules/
 Deploy cloud functions:
 
 cd firebase/cloud-functions
+
 firebase deploy
 
 
-## Educational Context
-
-This project is developed solely for educational purposes as part of a university course. The development team consists of three students, with a professor overseeing repository activity and progress. Contributions from external developers are not required.
-
-## Security Features
-
-MFA Authentication
-
-Role-Based Access Control (RBAC)
-
-Real-time Alerts for Suspicious Activities
-
-Least Privilege Access Principle
-
-## Project Guidelines
-
-Since this project is for academic purposes, all development work will be handled by the assigned team members. The repository history and activity will be monitored by the overseeing professor.
 
 ## License
 This project is created for educational purposes only and is not intended for commercial or real-world application use. Standard licensing does not apply.

@@ -6,48 +6,63 @@ FurrEverCare is a mobile and web-based application designed to help pet owners m
 
 ### In Scope
 
-Health Tracking: Log treatments, medications, and vet appointments.
+#### ● Health Tracking:
+Log treatments, medications, and vet appointments.
 
-Emergency Pet Profile Card: Quick access to critical health information in emergencies.
+#### ● Emergency Pet Profile Card:
+Quick access to critical health information in emergencies.
 
-Real-time Notifications: Treatment schedules, check-ups, and medication alerts.
+#### ● Real-time Notifications: 
+Treatment schedules, check-ups, and medication alerts.
 
-Interactive Pet Wellness Timeline: Visually track medical history and health progress.
+#### ● Interactive Pet Wellness Timeline: 
+Visually track medical history and health progress.
 
-AI-Powered Symptom Checker: Analyze symptoms and suggest potential conditions.
+#### ● AI-Powered Symptom Checker: 
+Analyze symptoms and suggest potential conditions.
 
-Searchable Pet Health Encyclopedia: Explore conditions, symptoms, and treatments.
+#### ● Searchable Pet Health Encyclopedia:
+Explore conditions, symptoms, and treatments.
 
-First-Aid Visual Instructions: Offline emergency guides with step-by-step instructions.
+#### ● First-Aid Visual Instructions: 
+Offline emergency guides with step-by-step instructions.
 
-Offline Mode Support: Access emergency guides without an internet connection.
+#### ● Offline Mode Support: 
+Access emergency guides without an internet connection.
 
 
 ### Out of Scope
 
-Live veterinary consultations or messaging with vets.
+#### ● Live veterinary consultations or messaging with vets.
 
-Financial transactions for veterinary services.
+#### ● Financial transactions for veterinary services.
 
-Advanced biometric authentication beyond facial recognition.
+#### ● Advanced biometric authentication beyond facial recognition.
 
 
 
 ## Tech Stack
 
-Backend: Java Spring Boot
+#### Backend: 
+Java Spring Boot
 
-Frontend: React.js
+#### Frontend: 
+React.js
 
-Mobile: Kotlin (Android)
+#### Mobile: 
+Kotlin (Android)
 
-Database: Firebase (Firestore & Cloud Functions)
+#### Database: Firebase 
+(Firestore & Cloud Functions)
 
-Authentication: Firebase Auth, Multi-Factor Authentication (MFA)
+#### Authentication: 
+Firebase Auth, Multi-Factor Authentication (MFA)
 
-Hosting: Firebase Hosting & Cloud Functions
+#### Hosting: 
+Firebase Hosting & Cloud Functions
 
-API Integrations: Google Maps (Location Services), DeepSeek AI (Symptom Checker)
+#### API Integrations: 
+Google Maps (Location Services), DeepSeek AI (Symptom Checker)
 
 
 

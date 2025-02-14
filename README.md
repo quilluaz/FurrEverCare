@@ -5,51 +5,59 @@ FurrEverCare is a mobile and web-based application designed to help pet owners m
 ## Features
 
 <details>
-  <summary>Health Tracking</summary>
+  <summary>Feature 1</summary>
   
-  #### ● Log treatments, medications, and vet appointments.
+  #### Health Tracking:  
+  ##### Log treatments, medications, and vet appointments.
 </details>
 
 <details>
-  <summary>Emergency Pet Profile Card</summary>
+  <summary>Feature 2</summary>
   
-  #### ● Quick access to critical health information in emergencies.
+  #### Emergency Pet Profile Card:  
+  ##### Quick access to critical health information in emergencies.
 </details>
 
 <details>
-  <summary>Real-time Notifications</summary>
+  <summary>Feature 3</summary>
   
-  #### ● Treatment schedules, check-ups, and medication alerts.
+  #### Real-time Notifications:  
+  ##### Treatment schedules, check-ups, and medication alerts.
 </details>
 
 <details>
-  <summary>Interactive Pet Wellness Timeline</summary>
+  <summary>Feature 4</summary>
   
-  #### ● Visually track medical history and health progress.
+  #### Interactive Pet Wellness Timeline:  
+  ##### Visually track medical history and health progress.
 </details>
 
 <details>
-  <summary>AI-Powered Symptom Checker</summary>
+  <summary>Feature 5</summary>
   
-  #### ● Analyze symptoms and suggest potential conditions.
+  #### AI-Powered Symptom Checker:  
+  ##### Analyze symptoms and suggest potential conditions.
 </details>
 
 <details>
-  <summary>Searchable Pet Health Encyclopedia</summary>
+  <summary>Feature 6</summary>
   
-  #### ● Explore conditions, symptoms, and treatments.
+  #### Searchable Pet Health Encyclopedia:  
+  ##### Explore conditions, symptoms, and treatments.
 </details>
 
 <details>
-  <summary>First-Aid Visual Instructions</summary>
+  <summary>Feature 7</summary>
   
-  #### ● Offline emergency guides with step-by-step instructions.
+  #### First-Aid Visual Instructions:  
+  ##### Offline emergency guides with step-by-step instructions.
 </details>
 
 <details>
-  <summary>Offline Mode Support</summary>
+  <summary>Feature 8</summary>
   
-  #### ● Access emergency guides without an internet connection.
+  #### Offline Mode Support:  
+  ##### Access emergency guides without an internet connection.
 </details>
 
 ## Out of Scope
@@ -86,8 +94,8 @@ Google Maps (Location Services), DeepSeek AI (Symptom Checker)
 ```
 FurrEverCare/
 │── backend/          # Java Spring Boot backend
-│── web/              # React frontend
-│── mobile/           # Kotlin Android app
+│── frontend-web/              # React frontend
+│── frontend-mobile/           # Kotlin Android app
 │── firebase/         # Firebase Firestore & Cloud Functions
 │── global/           # Logos, fonts, and reusable UI assets
 │── docs/             # Documentation (SRS, ERD, etc.)
@@ -125,6 +133,22 @@ Deploy cloud functions:
 cd firebase/cloud-functions
 firebase deploy
 ```
+
+## Links
+<details>
+  <summary>Figma</summary>
+  #### https://www.figma.com/design/AANK9bVmg8d9unJQcXKdnY/FurrEverCare-UI%2FUX?node-id=0-1&p=f
+</details>
+
+<details>
+  <summary>Diagram</summary>
+  ####
+</details>
+
+## Developers Profiles
+- **Genosolango, Selina Mae** - Web Frontend Dev | [GitHub](https://github.com/serkiel)
+- **Melocoton, Jeric Kiel** - Backend Dev | [GitHub](https://github.com/selmvg)
+- **Quilo, Jan Isaac** - Mobile Frontend Dev | [GitHub](https://github.com/quilluaz)
 
 ## License
 This project is created for educational purposes only and is not intended for commercial or real-world application use. Standard licensing does not apply.

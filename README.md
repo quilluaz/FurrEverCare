@@ -4,42 +4,59 @@ FurrEverCare is a mobile and web-based application designed to help pet owners m
 
 ## Features
 
-### In Scope
+<details>
+  <summary>Health Tracking</summary>
+  
+  #### ● Log treatments, medications, and vet appointments.
+</details>
 
-#### ● Health Tracking:
-Log treatments, medications, and vet appointments.
+<details>
+  <summary>Emergency Pet Profile Card</summary>
+  
+  #### ● Quick access to critical health information in emergencies.
+</details>
 
-#### ● Emergency Pet Profile Card:
-Quick access to critical health information in emergencies.
+<details>
+  <summary>Real-time Notifications</summary>
+  
+  #### ● Treatment schedules, check-ups, and medication alerts.
+</details>
 
-#### ● Real-time Notifications: 
-Treatment schedules, check-ups, and medication alerts.
+<details>
+  <summary>Interactive Pet Wellness Timeline</summary>
+  
+  #### ● Visually track medical history and health progress.
+</details>
 
-#### ● Interactive Pet Wellness Timeline: 
-Visually track medical history and health progress.
+<details>
+  <summary>AI-Powered Symptom Checker</summary>
+  
+  #### ● Analyze symptoms and suggest potential conditions.
+</details>
 
-#### ● AI-Powered Symptom Checker: 
-Analyze symptoms and suggest potential conditions.
+<details>
+  <summary>Searchable Pet Health Encyclopedia</summary>
+  
+  #### ● Explore conditions, symptoms, and treatments.
+</details>
 
-#### ● Searchable Pet Health Encyclopedia:
-Explore conditions, symptoms, and treatments.
+<details>
+  <summary>First-Aid Visual Instructions</summary>
+  
+  #### ● Offline emergency guides with step-by-step instructions.
+</details>
 
-#### ● First-Aid Visual Instructions: 
-Offline emergency guides with step-by-step instructions.
+<details>
+  <summary>Offline Mode Support</summary>
+  
+  #### ● Access emergency guides without an internet connection.
+</details>
 
-#### ● Offline Mode Support: 
-Access emergency guides without an internet connection.
-
-
-### Out of Scope
+## Out of Scope
 
 #### ● Live veterinary consultations or messaging with vets.
-
 #### ● Financial transactions for veterinary services.
-
 #### ● Advanced biometric authentication beyond facial recognition.
-
-
 
 ## Tech Stack
 
@@ -52,8 +69,8 @@ React.js
 #### Mobile: 
 Kotlin (Android)
 
-#### Database: Firebase 
-(Firestore & Cloud Functions)
+#### Database: 
+Firebase (Firestore & Cloud Functions)
 
 #### Authentication: 
 Firebase Auth, Multi-Factor Authentication (MFA)
@@ -64,73 +81,50 @@ Firebase Hosting & Cloud Functions
 #### API Integrations: 
 Google Maps (Location Services), DeepSeek AI (Symptom Checker)
 
-
-
 ## Project Structure
 
+```
 FurrEverCare/
-
 │── backend/          # Java Spring Boot backend
-
 │── web/              # React frontend
-
 │── mobile/           # Kotlin Android app
-
 │── firebase/         # Firebase Firestore & Cloud Functions
-
-│── global/    # Logos, fonts, and reusable UI assets
-
+│── global/           # Logos, fonts, and reusable UI assets
 │── docs/             # Documentation (SRS, ERD, etc.)
-
-
+```
 
 ## Installation & Setup
 
-### 1 Clone the Repository
-
+### 1. Clone the Repository
+```sh
 git clone https://github.com/your-repo/FurrEverCare.git
-
 cd FurrEverCare
+```
 
-
-### 2 Backend Setup (Spring Boot)
-
+### 2. Backend Setup (Spring Boot)
+```sh
 cd backend
-
 mvn clean install
-
 mvn spring-boot:run
+```
 
-
-### 3 Web App Setup (React.js)
-
+### 3. Web App Setup (React.js)
+```sh
 cd web
-
 npm install
-
 npm run dev
+```
 
+### 4. Mobile App Setup (Kotlin)
+Open `mobile/` in Android Studio, sync Gradle, and run the app.
 
-
-### 4 Mobile App Setup (Kotlin)
-
-Open mobile/ in Android Studio
-
-Sync Gradle and run the app
-
-
-### 5 Firebase Setup
-
-Configure Firestore rules in firebase/firestore-rules/
-
+### 5. Firebase Setup
+Configure Firestore rules in `firebase/firestore-rules/`.
 Deploy cloud functions:
-
+```sh
 cd firebase/cloud-functions
-
 firebase deploy
-
-
+```
 
 ## License
 This project is created for educational purposes only and is not intended for commercial or real-world application use. Standard licensing does not apply.
-

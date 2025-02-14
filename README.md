@@ -140,8 +140,8 @@ firebase deploy
 #### [Diagram]()
 
 ## Developers Profiles
-- **Genosolango, Selina Mae** - Web Frontend Dev | [GitHub](https://github.com/serkiel)
-- **Melocoton, Jeric Kiel** - Backend Dev | [GitHub](https://github.com/selmvg)
+- **Genosolango, Selina Mae** - Web Frontend Dev | [GitHub](https://github.com/selmvg)
+- **Melocoton, Jeric Kiel** - Backend Dev | [GitHub](https://github.com/serkiel)
 - **Quilo, Jan Isaac** - Mobile Frontend Dev | [GitHub](https://github.com/quilluaz)
 
 ## License

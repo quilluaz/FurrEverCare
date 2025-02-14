@@ -135,9 +135,9 @@ firebase deploy
 ```
 
 ## Links
-### [Figma](https://www.figma.com/design/AANK9bVmg8d9unJQcXKdnY/FurrEverCare-UI%2FUX?node-id=0-1&p=f)
+#### [Figma](https://www.figma.com/design/AANK9bVmg8d9unJQcXKdnY/FurrEverCare-UI%2FUX?node-id=0-1&p=f)
   
-### [Diagram]()
+#### [Diagram]()
 
 ## Developers Profiles
 - **Genosolango, Selina Mae** - Web Frontend Dev | [GitHub](https://github.com/serkiel)

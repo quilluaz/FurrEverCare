@@ -135,14 +135,10 @@ firebase deploy
 ```
 
 ## Links
+  [Figma](https://www.figma.com/design/AANK9bVmg8d9unJQcXKdnY/FurrEverCare-UI%2FUX?node-id=0-1&p=f)
+  
 <details>
-  <summary>Figma</summary>
-  #### https://www.figma.com/design/AANK9bVmg8d9unJQcXKdnY/FurrEverCare-UI%2FUX?node-id=0-1&p=f
-</details>
-
-<details>
-  <summary>Diagram</summary>
-  ####
+  [Diagram]()
 </details>
 
 ## Developers Profiles

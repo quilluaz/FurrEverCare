@@ -1,3 +1,17 @@
+<<<<<<< HEAD
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+=======
 # FurrEverCare
 
 FurrEverCare is a mobile and web-based application designed to help pet owners manage their pets’ health efficiently. The app provides tools for tracking medical records, handling emergencies, and accessing pet health resources to ensure pets receive the best possible care.
@@ -146,3 +160,4 @@ firebase deploy
 
 ## License
 This project is created for educational purposes only and is not intended for commercial or real-world application use. Standard licensing does not apply.
+>>>>>>> 8d43a5a0f805fd1077cc5d62e56abb6ab492fc28

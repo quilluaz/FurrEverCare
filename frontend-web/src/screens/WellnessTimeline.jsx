@@ -45,7 +45,7 @@ function WellnessTimeline() {
 
   const styles = {
     container: {
-      minHeight: '100%',
+      minHeight: '100vh',
       width: '100%',
       overflowX: 'hidden',
       backgroundColor: '#FFF7EC',

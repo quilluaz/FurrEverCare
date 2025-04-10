@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import logoandname from "../assets/logoandname.svg";
 import cat from "../assets/cat.png";
+import SignUpModal from "../components/SignUpModal";
+import { useNavigate } from 'react-router-dom';
 
-const LogInModal = ({ onLogin, onSignUp }) => {
+const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -12,6 +16,11 @@ const LogInModal = ({ onLogin, onSignUp }) => {
       onLogin(username, password);
     }
   };
+
+  const handleClose = () => {
+    onClose();
+    navigate(previousRoute);
+  }
 
   const styles = {
     modalOverlay: {
@@ -33,7 +42,8 @@ const LogInModal = ({ onLogin, onSignUp }) => {
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
       width: '800px',
       height: '460px',
-      backgroundColor: 'white'
+      backgroundColor: 'white',
+      position: 'relative'
     },
     leftPanel: {
       flex: '1',
@@ -83,12 +93,13 @@ const LogInModal = ({ onLogin, onSignUp }) => {
       maxWidth: '250px'
     },
     inputGroup: {
-      marginBottom: '10px'
+      marginBottom: '10px',
     },
     input: {
       width: '100%',
       padding: '10px 15px',
-      border: '1px solid #E0E0E0',
+      border: '1px solid #F0B542',
+      color: "#8A973F",
       borderRadius: '20px',
       fontSize: '14px',
       outline: 'none',
@@ -143,7 +154,7 @@ const LogInModal = ({ onLogin, onSignUp }) => {
     googleIcon: {
       marginRight: '10px',
       width: '18px',
-      height: '18px'
+      height: '18'
     },
     signupText: {
       fontSize: '12px',
@@ -158,6 +169,10 @@ const LogInModal = ({ onLogin, onSignUp }) => {
       fontWeight: 'bold'
     }
   };
+
+  useEffect(() => {
+    console.log("previousRoute:", previousRoute);
+  }, [previousRoute]);
 
   return (
     <div style={styles.modalOverlay}>
@@ -215,12 +230,38 @@ const LogInModal = ({ onLogin, onSignUp }) => {
           </button>
           
           <div style={styles.signupText}>
-            Don't have an Account? <span style={styles.signupLink} onClick={onSignUp}>Sign Up</span>
+            Don't have an Account? 
+            <span style={styles.signupLink} onClick={() => {
+              handleClose();                     // close login modal
+              setIsSignUpModalOpen(true);   // open signup modal
+            }}>
+              Sign Up
+            </span>
+
           </div>
+          {isSignUpModalOpen && (
+            <SignUpModal onClose={() => {
+              setIsSignUpModalOpen(false);
+              navigate('/register');
+            }}/>
+          )}
         </div>
-        
         <div style={styles.rightPanel}>
-          <img src={cat}alt="Cat" style={styles.catImage} />
+          <div>
+            <img src={cat}alt="Cat" style={styles.catImage} />
+             <button style={{
+                position: 'absolute',
+                top: '10px',
+                right: '30px',
+                border: 'none',
+                backgroundColor: 'transparent',
+                fontSize: '30px',
+                color: "#042C3C",
+                cursor: 'pointer'
+              }} onClick={handleClose}>
+                ×
+              </button>
+          </div>
         </div>
       </div>
     </div>

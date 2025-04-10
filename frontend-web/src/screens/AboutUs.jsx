@@ -1,18 +1,25 @@
+
+import React, { useState } from 'react';
 import { Box, Typography, Button, Container } from "@mui/material";
-import GuestNavBar from "../components/GuestNavBar";// Import the GuestNavBar
-import AboutUsDog from "../assets/AboutUsDog.png";
+import GuestNavBar from "../components/GuestNavBar";
 import AboutUsDog2 from "../assets/AboutUsDog2.png";
+import SignUpModal from "../components/SignUpModal"; // Import SignUpModal
+import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function AboutUs() {
-  // Define the colors
   const colors = {
     yellow: "#F0B542",
     darkBlue: "#042C3C",
     coral: "#EA6C7B",
     cream: "#FFF7EC",
-    green: "#8A9A5B", // Color for "STAY" text
+    green: "#8A9A5B",
   };
 
+  const [isSignUpOpen, setIsSignUpOpen] = useState(false); // State for SignUpModal
+  const navigate = useNavigate();
+  
   return (
     <Box
       sx={{
@@ -23,13 +30,10 @@ export default function AboutUs() {
         overflow: "hidden",
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         display: "flex",
-        flexDirection: "column",  
+        flexDirection: "column",
       }}
     >
-      {/* Import and render the GuestNavBar */}
       <GuestNavBar colors={colors} />
-
-      {/* Page Title */}
       <Typography
         sx={{
           pt: 2,
@@ -40,24 +44,19 @@ export default function AboutUs() {
       >
         About Us Page
       </Typography>
-
-      {/* Yellow Triangle Background */}
       <Box
-          sx={{
-            position: "absolute",
-            top: "-100px",         // ⬆️ Move it higher
-            left: "-20px",        // ⬅️ Move it more to the left
-            width: "550px",
-            height: "550px",
-            backgroundColor: colors.yellow,
-            borderRadius: "50%",
-            transform: "scale(1.2)",
-            zIndex: 0,
-          }}
-        />
-
-
-      {/* Main Content */}
+        sx={{
+          position: "absolute",
+          top: "-100px",
+          left: "-20px",
+          width: "550px",
+          height: "550px",
+          backgroundColor: colors.yellow,
+          borderRadius: "50%",
+          transform: "scale(1.2)",
+          zIndex: 0,
+        }}
+      />
       <Container
         maxWidth="lg"
         sx={{
@@ -68,22 +67,19 @@ export default function AboutUs() {
           padding: "0 20px",
         }}
       >
-        {/* Dog Image */}
         <Box
           component="img"
           src={AboutUsDog2}
           alt="Bernese Mountain Dog"
           sx={{
-              height: "auto",
-              width: "80%",
-              objectFit: "contain",
-              objectPosition: "left center",
-              marginTop: "-90px",
-              marginLeft: "-350px"
-            }}
-          />
-
-        {/* Content */}
+            height: "auto",
+            width: "80%",
+            objectFit: "contain",
+            objectPosition: "left center",
+            marginTop: "-90px",
+            marginLeft: "-350px"
+          }}
+        />
         <Box
           sx={{
             width: "65%",
@@ -92,7 +88,6 @@ export default function AboutUs() {
             justifyContent: "center",
             alignItems: "center",
             padding: "0 20px",
-            
           }}
         >
           <Typography
@@ -114,7 +109,6 @@ export default function AboutUs() {
               on track.
             </Box>
           </Typography>
-
           <Typography
             variant="body1"
             sx={{
@@ -128,7 +122,6 @@ export default function AboutUs() {
             Your pet's health, our priority! Track medications, monitor wellness, and explore expert care tips—all in
             one place. Join us and give your furry friend the love and care they deserve!
           </Typography>
-
           <Button
             variant="contained"
             sx={{
@@ -145,34 +138,42 @@ export default function AboutUs() {
                 boxShadow: "none",
               },
             }}
+            onClick={() => navigate('/register')}
+            // Open SignUpModal directly
           >
             Sign Up
           </Button>
         </Box>
       </Container>
-
-      {/* Font imports */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
-        
-        html, body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-          width: 100%;
-          overflow-x: hidden;
-        }
-        
-        #root {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-      `,
+            @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
+            html, body {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              width: 100%;
+              overflow-x: hidden;
+            }
+            #root {
+              min-height: 100vh;
+              display: flex;
+              flex-direction: column;
+            }
+          `,
         }}
       />
+
+      {isSignUpOpen && (
+        <SignUpModal
+          onClose={() => setIsSignUpOpen(false)}
+          onSignUp={(firstName, lastName, phoneNumber, email, password, confirmPassword) => {
+            console.log("Sign up with:", firstName, lastName, phoneNumber, email, password);
+            setIsSignUpOpen(false);
+          }}
+        />
+      )}
     </Box>
   );
 }

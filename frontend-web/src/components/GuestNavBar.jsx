@@ -1,15 +1,31 @@
 import logo from "../assets/logo.png";
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import LogInModal from "./LogInModal";
 
 export default function GuestNavBar() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const colors = {
     yellow: "#F0B542",
     darkBlue: "#042C3C",
     coral: "#EA6C7B",
     cream: "#FFF7EC",
-  }
+  };
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleSignUpClick = () => {
+    closeModal();
+    navigate("/register");
+  };
 
   return (
     <div
@@ -40,12 +56,11 @@ export default function GuestNavBar() {
               width: "130px",
               objectFit: "contain",
               marginRight: "10px",
-              marginLeft: "-250px"
+              marginLeft: "-250px",
             }}
           />
           <span
-            style={{  
-
+            style={{
               fontWeight: "bold",
               color: colors.darkBlue,
               fontFamily: "'Baloo 2', cursive",
@@ -57,7 +72,7 @@ export default function GuestNavBar() {
         </div>
 
         {/* Navigation Links */}
-        <div style={{ display: "flex", alignItems: "center", padding: "30px"}}>
+        <div style={{ display: "flex", alignItems: "center", padding: "30px" }}>
           <Link
             to="/"
             className="nav-link"
@@ -115,13 +130,15 @@ export default function GuestNavBar() {
               cursor: "pointer",
               textTransform: "none",
               fontFamily: "'Baloo 2', cursive",
-              marginRight: "-270px"
+              marginRight: "-270px",
             }}
+            onClick={openModal}
           >
             Login
           </button>
         </div>
       </div>
+      {isModalOpen && <LogInModal onClose={closeModal} onSignUp={handleSignUpClick} />}
     </div>
   );
 }

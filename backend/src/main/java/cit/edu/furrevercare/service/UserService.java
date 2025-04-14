@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class UserService {
     private static final String COLLECTION_NAME = "users";
-    private final Firestore firestore;
+    public final Firestore firestore;
 
     public UserService(Firestore firestore) {
         this.firestore = firestore;

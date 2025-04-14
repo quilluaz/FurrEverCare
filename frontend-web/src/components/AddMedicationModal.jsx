@@ -206,7 +206,7 @@ function AddMedicationModal({ isOpen, onClose, onAddMedication }) {
             <div>
               <label className="block text-sm font-bold text-[#042C3C] mb-2">Reminders</label>
               <div className="flex space-x-6">
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center space-x-2 cursor-pointer text-gray-500">
                   <div
                     className={`relative w-12 h-6 transition-colors duration-200 ease-linear rounded-full ${
                       medication.reminders.email ? "bg-[#EA6C7B]" : "bg-gray-300"
@@ -222,7 +222,7 @@ function AddMedicationModal({ isOpen, onClose, onAddMedication }) {
                   <span>Email</span>
                 </label>
 
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center space-x-2 cursor-pointer text-gray-500">
                   <div
                     className={`relative w-12 h-6 transition-colors duration-200 ease-linear rounded-full ${
                       medication.reminders.sms ? "bg-[#EA6C7B]" : "bg-gray-300"
@@ -230,7 +230,7 @@ function AddMedicationModal({ isOpen, onClose, onAddMedication }) {
                     onClick={() => handleReminderToggle("sms")}
                   >
                     <div
-                      className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-linear ${
+                      className={`text-gray-500 absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-linear ${
                         medication.reminders.sms ? "transform translate-x-6" : ""
                       }`}
                     ></div>
@@ -238,7 +238,7 @@ function AddMedicationModal({ isOpen, onClose, onAddMedication }) {
                   <span>SMS</span>
                 </label>
 
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex items-center space-x-2 cursor-pointer text-gray-500">
                   <div
                     className={`relative w-12 h-6 transition-colors duration-200 ease-linear rounded-full ${
                       medication.reminders.inApp ? "bg-[#EA6C7B]" : "bg-gray-300"

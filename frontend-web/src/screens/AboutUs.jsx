@@ -27,7 +27,8 @@ export default function AboutUs() {
         width: "100%",
         backgroundColor: colors.cream,
         position: "relative",
-        overflow: "hidden",
+        overflowX: "auto",
+        overflowY: "hidden",
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         display: "flex",
         flexDirection: "column",
@@ -138,7 +139,7 @@ export default function AboutUs() {
                 boxShadow: "none",
               },
             }}
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/signup')}
             // Open SignUpModal directly
           >
             Sign Up

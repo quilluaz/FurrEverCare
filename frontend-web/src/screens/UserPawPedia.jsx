@@ -1,10 +1,24 @@
-import UserNavBar from "../components/UserNavBar";
+"use client"
 
-import logo from "../assets/logo.png";
-import pawpedia from "../assets/pawpedia.png";
+import { useState, useEffect } from "react"
+import UserNavBar from "../components/UserNavBar"
+import WelcomeMessageModal from "../components/WelcomeMessageModal"
+import pawpedia from "../assets/pawpedia.png"
 
+export default function UserPawPedia() {
+  // State for welcome modal
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
 
-export default function PawPedia() {
+  // Show welcome modal when component mounts
+  useEffect(() => {
+    // Check if the modal has already been shown in this session
+    const hasSeenWelcome = sessionStorage.getItem("seenWelcomePawPedia")
+    if (!hasSeenWelcome) {
+      setShowWelcomeModal(true)
+      sessionStorage.setItem("seenWelcomePawPedia", "true") // Mark the modal as shown
+    }
+  }, [])
+
   // Define the colors
   const colors = {
     yellow: "#F0B542",
@@ -14,7 +28,6 @@ export default function PawPedia() {
   }
 
   return (
-  
     <div
       style={{
         minHeight: "100vh",
@@ -25,18 +38,21 @@ export default function PawPedia() {
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         display: "flex",
         flexDirection: "column",
-        
-        
       }}
-      
     >
-       <div style={{ position: "relative", zIndex: 10 }}>
-         <UserNavBar />
-        </div>
-       
+      <div style={{ position: "relative", zIndex: 10 }}>
+        <UserNavBar />
+      </div>
+
+      {/* Welcome Modal */}
+      <WelcomeMessageModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        userName="" // You can pass the user's name here if available
+      />
+
       {/* Background Circles */}
       <div
-      
         style={{
           position: "absolute",
           top: 0,
@@ -97,7 +113,7 @@ export default function PawPedia() {
           backgroundColor: colors.yellow,
         }}
       ></div>
-      
+
       {/* Main Content */}
       <div
         style={{
@@ -121,7 +137,7 @@ export default function PawPedia() {
         >
           {/* Pets Image */}
           <img
-            src={pawpedia}
+            src={pawpedia || "/placeholder.svg"}
             alt="Pets lineup"
             style={{
               width: "130%",
@@ -166,7 +182,7 @@ export default function PawPedia() {
               placeholder="Search conditions, diseases or illnesses..."
               style={{
                 flexGrow: 1,
-                color: "rgba(0, 0, 0, 1)", 
+                color: "rgba(0, 0, 0, 1)",
                 backgroundColor: "transparent",
                 outline: "none",
                 border: "none",
@@ -210,5 +226,5 @@ export default function PawPedia() {
         }}
       />
     </div>
-  );
+  )
 }

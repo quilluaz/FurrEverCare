@@ -1,29 +1,48 @@
-
 "use client"
 
 import { useState } from "react"
 import logo from "../assets/logo.png"
 import { useNavigate } from "react-router-dom"
+import AuthService from "../config/AuthService"
 
-const SignUpPage = ({ onSignUp }) => {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
+const SignUpPage = () => {
+  const [fullName, setFullName] = useState("")
+  const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
-    
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (onSignUp) {
-      onSignUp(firstName, lastName, phoneNumber, email, password, confirmPassword)
+    
+    // Form validation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
     }
-    navigate("/about-us")
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return
+    }
+    
+    try {
+      setIsLoading(true)
+      setError("")
+      
+      await AuthService.register(fullName, phone, email, password)
+      
+      navigate("/home-pawpedia")
+    } catch (err) {
+      setError(err.message || "Registration failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
   
-
   return (
     <div className="min-h-screen flex flex-col md:flex-row font-['Baloo']">
       {/* Left Panel - Logo */}
@@ -43,52 +62,41 @@ const SignUpPage = ({ onSignUp }) => {
         <div className="max-w-md mx-auto w-full">
           <h2 className="text-3xl font-bold mb-6 text-center text-[#042C3C]">Join Our Community!</h2>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <form className="w-full" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-[#042C3C] mb-1">
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  placeholder="First Name"
-                  className="w-full p-3 rounded-2xl text-sm outline-none font-semibold"
-                  style={{ backgroundColor: "#FFF7EC", color: "#8A973F", border: "none" }}
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-[#042C3C] mb-1">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  placeholder="Last Name"
-                  className="w-full p-3 rounded-2xl text-sm outline-none font-semibold"
-                  style={{ backgroundColor: "#FFF7EC", color: "#8A973F", border: "none" }}
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
-              </div>
+            <div className="mb-4">
+              <label htmlFor="fullName" className="block text-sm font-medium text-[#042C3C] mb-1">
+                Full Name
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                placeholder="Full Name"
+                className="w-full p-3 rounded-2xl text-sm outline-none font-semibold"
+                style={{ backgroundColor: "#FFF7EC", color: "#8A973F", border: "none" }}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-[#042C3C] mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-[#042C3C] mb-1">
                 Phone Number
               </label>
               <input
-                id="phoneNumber"
+                id="phone"
                 type="tel"
                 placeholder="Phone Number"
                 className="w-full p-3 rounded-2xl text-sm outline-none font-semibold"
                 style={{ backgroundColor: "#FFF7EC", color: "#8A973F", border: "none" }}
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
               />
             </div>
@@ -145,22 +153,19 @@ const SignUpPage = ({ onSignUp }) => {
               type="submit"
               className="w-full py-3 border-none rounded-3xl text-sm font-bold cursor-pointer transition-colors hover:bg-[#EA6C7B]/90"
               style={{ backgroundColor: "#EA6C7B", color: "white" }}
-              onClick={() => navigate('/register')} 
+              disabled={isLoading}
             >
-              Sign Up
+              {isLoading ? "Signing Up..." : "Sign Up"}
             </button>
 
-             <div className="mt-4 text-center">
-                <p className="text-[#042C3C]">
-                 Already have an account?{" "}  
-                   <a href="/about-us"
-                     className="text-[#EA6C7B] font-medium hover:underline"
-                            >
-                            Log in
-                            </a>
-            </p>
+            <div className="mt-4 text-center">
+              <p className="text-[#042C3C]">
+                Already have an account?{" "}  
+                <a href="/login" className="text-[#EA6C7B] font-medium hover:underline">
+                  Log in
+                </a>
+              </p>
             </div>
-
           </form>
         </div>
       </div>

@@ -1,26 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import logoandname from "../assets/logoandname.svg";
 import cat from "../assets/cat.png";
-import SignUpModal from "../components/SignUpModal";
 import { useNavigate } from 'react-router-dom';
+import AuthService from "../config/AuthService";
 
-const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
-  const [username, setUsername] = useState('');
+const LogInModal = ({ onClose, previousRoute }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUpModalOpen, setIsSignUpModalOpen] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (onLogin) {
-      onLogin(username, password);
+    
+    try {
+      setIsLoading(true);
+      setError('');
+      
+      await AuthService.login(email, password);
+      localStorage.setItem("showWelcomeModal", "true");
+      
+      onClose();
+      navigate('/home-pawpedia');
+    } catch (err) {
+      setError(err.message || 'Invalid email or password');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleClose = () => {
     onClose();
     navigate(previousRoute);
-  }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      
+      await AuthService.loginWithGoogle();
+      
+      onClose();
+      navigate('/home-pawpedia');
+    } catch (error) {
+      console.error("Google Sign-In failed:", error);
+      let errorMessage = "Google Sign-In failed. Please try again.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Sign-in was cancelled. Please try again.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error. Check your internet connection.";
+      }
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const styles = {
     modalOverlay: {
@@ -63,23 +99,16 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
       justifyContent: 'center'
     },
     catImage: {
-        width: '350%',
-        height: '310px',
-        objectFit: 'cover',
-        objectPosition: 'center bottom',
-        transform: 'rotate(-3deg) translate(7px) translateY(60px)' 
+      width: '350%',
+      height: '310px',
+      objectFit: 'cover',
+      objectPosition: 'center bottom',
+      transform: 'rotate(-3deg) translate(7px) translateY(60px)'
     },
     logo: {
       width: '200px',
       height: '150px',
-      marginTop: '-5px' 
-    },
-    title: {
-      color: '#042C3C',
-      fontSize: '18px',
-      fontWeight: 'bold',
-      marginBottom: '5px',
-      fontFamily: 'Arial, sans-serif'
+      marginTop: '-5px'
     },
     subtitle: {
       color: '#042C3C',
@@ -91,6 +120,16 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
     form: {
       width: '100%',
       maxWidth: '250px'
+    },
+    errorMessage: {
+      padding: '8px',
+      marginBottom: '10px',
+      backgroundColor: '#FEECEC',
+      border: '1px solid #F0B542',
+      borderRadius: '20px',
+      color: '#EA6C7B',
+      fontSize: '12px',
+      textAlign: 'center'
     },
     inputGroup: {
       marginBottom: '10px',
@@ -116,18 +155,18 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
       textDecoration: 'none'
     },
     loginButton: {
-        width: '90%',
-        padding: '8px',
-        backgroundColor: '#EA6C7B',
-        color: 'white',
-        border: 'none',
-        borderRadius: '16px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        margin: '5px auto', // Centers the button horizontally
-        display: 'block' // Ensures proper centering
-      },
+      width: '90%',
+      padding: '8px',
+      backgroundColor: '#EA6C7B',
+      color: 'white',
+      border: 'none',
+      borderRadius: '16px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      margin: '5px auto',
+      display: 'block'
+    },
     orDivider: {
       display: 'flex',
       alignItems: 'center',
@@ -135,7 +174,6 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
       fontSize: '12px',
       margin: '5px 0',
       fontWeight: 'bold'
-
     },
     googleButton: {
       width: '60%',
@@ -170,29 +208,26 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
     }
   };
 
-  useEffect(() => {
-    console.log("previousRoute:", previousRoute);
-  }, [previousRoute]);
-
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modalContainer}>
         <div style={styles.leftPanel}>
-          <img src={logoandname} style={styles.logo} />
+          <img src={logoandname} style={styles.logo} alt="FurrEverCare Logo" />
           <p style={styles.subtitle}>Sign In to Continue</p>
-          
+
+          {error && <div style={styles.errorMessage}>{error}</div>}
+
           <form style={styles.form} onSubmit={handleSubmit}>
             <div style={styles.inputGroup}>
               <input
-                type="text"
-                placeholder="Username"
+                type="email"
+                placeholder="Email"
                 style={styles.input}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            
             <div style={styles.inputGroup}>
               <input
                 type="password"
@@ -203,23 +238,27 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
                 required
               />
             </div>
-            
             <div style={styles.forgotPassword}>
-              <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>
+              <a href="/forgot-password" style={{ color: 'inherit', textDecoration: 'none' }}>
                 Forgot Password?
               </a>
             </div>
-            
-            <button type="submit" style={styles.loginButton}>
-              Login
+            <button 
+              type="submit" 
+              style={styles.loginButton}
+              disabled={isLoading}
+            >
+              {isLoading ? "Logging in..." : "Login"}
             </button>
           </form>
-          
-          <div style={styles.orDivider}>
-            OR
-          </div>
-          
-          <button style={styles.googleButton}>
+
+          <div style={styles.orDivider}>OR</div>
+
+          <button 
+            style={styles.googleButton} 
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
             <svg width="18" height="18" viewBox="0 0 18 18" style={styles.googleIcon}>
               <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"></path>
               <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"></path>
@@ -228,39 +267,36 @@ const LogInModal = ({ onLogin, onSignUp, onClose, previousRoute }) => {
             </svg>
             Continue with Google
           </button>
-          
+
           <div style={styles.signupText}>
             Don't have an Account? 
-            <span style={styles.signupLink} onClick={() => {
-              handleClose();                     // close login modal
-              setIsSignUpModalOpen(true);   // open signup modal
-            }}>
+            <span 
+              style={styles.signupLink} 
+              onClick={() => {
+                handleClose();
+                navigate('/signup');
+              }}
+            >
               Sign Up
             </span>
-
           </div>
-          {isSignUpModalOpen && (
-            <SignUpModal onClose={() => {
-              setIsSignUpModalOpen(false);
-              navigate('/register');
-            }}/>
-          )}
         </div>
+
         <div style={styles.rightPanel}>
           <div>
-            <img src={cat}alt="Cat" style={styles.catImage} />
-             <button style={{
-                position: 'absolute',
-                top: '10px',
-                right: '30px',
-                border: 'none',
-                backgroundColor: 'transparent',
-                fontSize: '30px',
-                color: "#042C3C",
-                cursor: 'pointer'
-              }} onClick={handleClose}>
-                ×
-              </button>
+            <img src={cat} alt="Cat" style={styles.catImage} />
+            <button style={{
+              position: 'absolute',
+              top: '10px',
+              right: '30px',
+              border: 'none',
+              backgroundColor: 'transparent',
+              fontSize: '30px',
+              color: "#042C3C",
+              cursor: 'pointer'
+            }} onClick={handleClose}>
+              ×
+            </button>
           </div>
         </div>
       </div>

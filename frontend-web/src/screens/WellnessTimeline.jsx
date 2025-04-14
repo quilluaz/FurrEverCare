@@ -54,7 +54,8 @@ function WellnessTimeline() {
     mainContent: {
       maxWidth: '1280px',
       margin: '0 auto',
-      padding: '32px 16px'
+      padding: '32px 16px',
+      position: 'relative'
     },
     gridContainer: {
       display: 'grid',
@@ -493,9 +494,9 @@ function WellnessTimeline() {
                 <div style={styles.timelineHeader}>
                   <h2 style={styles.timelineTitle}>Treatment Timeline</h2>
                   <div style={styles.buttonGroup}>
-                    <button style={styles.outlineButton}>
+                   { /**<button style={styles.outlineButton}>
                       List View
-                    </button>
+                    </button>**/}
                     <button style={{...styles.outlineButton, ...styles.activeButton}}>
                       Timeline
                     </button>

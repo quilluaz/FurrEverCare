@@ -1,31 +1,62 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { User, Edit, LogOut } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import LogoutConfirmationModal from "../components/LogoutConfirmationModal"
 import UserNavBar from "../components/UserNavBar"
+import AuthService from "../config/AuthService"
 
 const UserProfile = () => {
   const [user, setUser] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "johndoe@example.com",
-    phoneNumber: "(555) 000 - 0000",
-    profileImage: null, // URL would go here if available
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    profileImage: null,
   })
 
   const [isEditing, setIsEditing] = useState(false)
   const [editedUser, setEditedUser] = useState({ ...user })
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const navigate = useNavigate()
 
-  const handleEditToggle = () => {
+  // Load user data when component mounts
+  useEffect(() => {
+    const loadUserData = () => {
+      const userData = AuthService.getUser();
+      if (!userData) {
+        // Redirect to login if no user data found
+        navigate('/login');
+        return;
+      }
+      setUser(userData);
+      setEditedUser(userData);
+    };
+
+    loadUserData();
+  }, [navigate]);
+
+  const handleEditToggle = async () => {
     if (isEditing) {
       // Save changes
-      setUser({ ...editedUser })
+      try {
+        setIsLoading(true);
+        setError("");
+        const updatedUser = await AuthService.updateProfile(editedUser);
+        setUser(updatedUser);
+        setIsEditing(false);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to update profile");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Enter edit mode
+      setIsEditing(true);
     }
-    setIsEditing(!isEditing)
   }
 
   const handleChange = (e) => {
@@ -37,21 +68,39 @@ const UserProfile = () => {
     setShowLogoutModal(true)
   }
 
-  const handleLogoutConfirm = () => {
-    // Implement actual logout logic here
-    console.log("User logged out")
-    setShowLogoutModal(false)
-    navigate("/login")
+  const handleLogoutConfirm = async () => {
+    try {
+      await AuthService.logout();
+      setShowLogoutModal(false);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still navigate away even if backend logout fails
+      navigate("/login");
+    }
   }
 
   const handleLogoutCancel = () => {
     setShowLogoutModal(false)
   }
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!AuthService.isAuthenticated()) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 font-['Baloo']">
-            <UserNavBar/>
+      <UserNavBar/>
       <div className="max-w-2xl mx-auto mt-10">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+        
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-gray-100">
@@ -158,18 +207,19 @@ const UserProfile = () => {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="text-gray-500 flex flex-col sm:flex-row gap-4 w-full max-w-md">
+            {/* Action Buttons */}
+            <div className="flex gap-4">
               <button
                 onClick={handleEditToggle}
-                className="flex-1 py-2 px-4 border-2 border-[#8A973F] text-[#8A973F] rounded-md hover:bg-[#8A973F]/10 transition-colors flex items-center justify-center gap-2"
+                disabled={isLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-[#EA6C7B] text-white rounded-lg hover:bg-[#d95969] transition disabled:opacity-50"
               >
                 <Edit className="h-4 w-4" />
-                {isEditing ? "Save Profile" : "Edit Profile"}
+                {isEditing ? (isLoading ? "Saving..." : "Save") : "Edit Profile"}
               </button>
               <button
                 onClick={handleLogoutClick}
-                className="flex-1 py-2 px-4 bg-[#EA6C7B] text-white rounded-md hover:bg-[#EA6C7B]/90 transition-colors flex items-center justify-center gap-2"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-300 text-[#042C3C] rounded-lg hover:bg-gray-400 transition"
               >
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -177,40 +227,16 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
-
-        {/* Additional sections could go here */}
-        <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-[#042C3C] mb-4">Account Settings</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 border border-gray-100 rounded-md hover:bg-gray-50 cursor-pointer">
-              <div>
-                <h3 className="font-medium text-[#042C3C]">Password</h3>
-                <p className="text-sm text-gray-500">Change your password</p>
-              </div>
-              <Edit className="h-4 w-4 text-gray-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 border border-gray-100 rounded-md hover:bg-gray-50 cursor-pointer">
-              <div>
-                <h3 className="font-medium text-[#042C3C]">Notifications</h3>
-                <p className="text-sm text-gray-500">Manage notification preferences</p>
-              </div>
-              <Edit className="h-4 w-4 text-gray-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 border border-gray-100 rounded-md hover:bg-gray-50 cursor-pointer">
-              <div>
-                <h3 className="font-medium text-[#042C3C]">Privacy</h3>
-                <p className="text-sm text-gray-500">Control your privacy settings</p>
-              </div>
-              <Edit className="h-4 w-4 text-gray-400" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Logout Confirmation Modal */}
-      <LogoutConfirmationModal isOpen={showLogoutModal} onClose={handleLogoutCancel} onConfirm={handleLogoutConfirm} />
+      <LogoutConfirmationModal
+        isOpen={showLogoutModal}
+        onCancel={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default UserProfile
+export default UserProfile;

@@ -110,7 +110,8 @@ export default function TreatmentTracker() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF7EC] font-['Baloo']">
+    <div className="min-h-screen bg-[#FFF7EC] font-['Baloo'] overflow-x-hidden">
+
       <UserNavBar />
 
       {/* Main content area */}

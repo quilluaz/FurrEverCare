@@ -32,12 +32,11 @@ function App() {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/tracker" element={<TreatmentTracker />} />
           <Route path="/login" element={<LogInModal />} />
-          <Route path="/signup" element={<SignUpModal />} />
-          <Route path="/register" element={<SignUpPage />} />
+          <Route path="/signup" element={<SignUpPage/>} />
           <Route path="/wellness-timeline" element={<WellnessTimeline />} />
           <Route path="/navbar" element={<UserNavBar />} />
           <Route path="/mypets" element={<PetProfiles />} />
-          <Route path="/pawpedia" element={<UserPawPedia />} />
+          <Route path="/home-pawpedia" element={<UserPawPedia />} />
           <Route path="/profile" element={<UserProfile />} />
         </Routes>
       </div>

@@ -16,7 +16,7 @@ import AddPetModal from "../components/AddPetModal"
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-['Baloo']">
+    <div className="min-h-screen bg-[#F8F9FA] font-['Baloo'] overflow-auto">
       <UserNavBar/>
 
       {/* Main content area */}
@@ -25,7 +25,7 @@ import AddPetModal from "../components/AddPetModal"
         <div className="flex justify-between items-center mb-10 -ml-60">
           <h1 className="text-2xl font-bold text-[#042C3C]">Pet Profiles</h1>
           <button
-            className="px-6 py-2 bg-[#EA6C7B] text-white rounded-full hover:bg-[#EA6C7B]/90 transition-colors flex items-center gap-2 -mr-60"
+            className="px-6 py-2 bg-[#EA6C7B] text-white rounded-full hover:bg-[#EA6C7B]/90 transition-colors flex items-center gap-2 mr-10"
             onClick={() => setShowAddPetModal(true)}
           >
             <Plus className="h-5 w-5" />
@@ -43,7 +43,7 @@ import AddPetModal from "../components/AddPetModal"
         {/* Pet cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pets.map((pet) => (
-            <div key={pet.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={pet.id} className="bg-white rounded-lg shadow-md overflow-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-4">

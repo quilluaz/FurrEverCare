@@ -1,125 +1,318 @@
-import React, { useState } from 'react'; 
-import UserNavBar from "../components/UserNavBar"
-import { Plus, Edit, Trash2, Calendar, Activity, FileText } from "lucide-react"
-import AddPetModal from "../components/AddPetModal"
+import { useState, useEffect } from "react";
+import UserNavBar from "../components/UserNavBar";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Calendar,
+  Activity,
+  FileText,
+  Loader,
+} from "lucide-react";
+import AddPetModal from "../components/pets/AddPetModal";
+import DeleteConfPetModal from "../components/pets/DeleteConfPetModal";
+import CreateConfPetModal from "../components/pets/CreateConfPetModal";
+import EditConfPetModal from "../components/pets/EditConfPetModal";
+import axios from "axios";
+import AuthService from "../config/AuthService";
 
- function PetProfiles() {
-  const [pets, setPets] = useState([])
-  const [showAddPetModal, setShowAddPetModal] = useState(false)
+export default function PetProfiles() {
+  const [pets, setPets] = useState([]);
+  const [showAddPetModal, setShowAddPetModal] = useState(false);
+  const [showEditPetModal, setShowEditPetModal] = useState(false);
+  const [selectedPet, setSelectedPet] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingPetIds, setLoadingPetIds] = useState([]);
+  const [error, setError] = useState(null);
 
-  const handleAddPet = (newPet) => {
-    setPets([...pets, { ...newPet, id: Date.now() }])
-  }
+  // Confirmation modal states
+  const [showDeleteConfModal, setShowDeleteConfModal] = useState(false);
+  const [showCreateConfModal, setShowCreateConfModal] = useState(false);
+  const [showEditConfModal, setShowEditConfModal] = useState(false);
+  const [isEditConfirmation, setIsEditConfirmation] = useState(true);
+  const [petToDelete, setPetToDelete] = useState(null);
+  const [petToEdit, setPetToEdit] = useState(null);
+  const [lastAddedPet, setLastAddedPet] = useState(null);
+  const [lastEditedPet, setLastEditedPet] = useState(null);
 
-  const deletePet = (id) => {
-    setPets(pets.filter((pet) => pet.id !== id))
-  }
+  const user = AuthService.getUser();
+  const userID = user?.userId || null;
+  const API_BASE_URL = "http://localhost:8080/api/users";
+
+  useEffect(() => {
+    AuthService.init();
+  }, []);
+
+  const fetchPets = async () => {
+    if (!userID) {
+      setError("Please log in to view your pets.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/${userID}/pets`);
+      setPets(res.data);
+      setError(null);
+    } catch {
+      setError("Failed to fetch pets. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPets();
+  }, [userID]);
+
+  const handleAddPet = async (newPet) => {
+    if (!userID) {
+      setError("Please log in to add a pet.");
+      return;
+    }
+    const tempId = `temp-${Date.now()}`;
+    setShowAddPetModal(false);
+    const tempPet = { ...newPet, petID: tempId, allergies: newPet.allergies || [] };
+    setPets((p) => [...p, tempPet]);
+    setLoadingPetIds((ids) => [...ids, tempId]);
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/${userID}/pets`, newPet);
+      const realId = res.data.petID;
+      setPets((p) =>
+        p.map((pt) => (pt.petID === tempId ? { ...tempPet, petID: realId } : pt))
+      );
+      setLoadingPetIds((ids) => ids.filter((id) => id !== tempId));
+      setLastAddedPet({ ...tempPet, petID: realId });
+      setShowCreateConfModal(true);
+    } catch {
+      setPets((p) => p.filter((pt) => pt.petID !== tempId));
+      setLoadingPetIds((ids) => ids.filter((id) => id !== tempId));
+      setError("Failed to add pet. Please try again.");
+    }
+  };
+
+  const confirmEditPet = (pet) => {
+    setPetToEdit(pet);
+    setIsEditConfirmation(true);
+    setShowEditConfModal(true);
+  };
+  const proceedWithEdit = () => {
+    setShowEditConfModal(false);
+    setSelectedPet(petToEdit);
+    setShowEditPetModal(true);
+  };
+  const handleEditPet = async (updatedPet) => {
+    if (!userID) {
+      setError("Please log in to edit a pet.");
+      return;
+    }
+    setShowEditPetModal(false);
+    setLoadingPetIds((ids) => [...ids, updatedPet.petID]);
+    setPets((p) =>
+      p.map((pt) => (pt.petID === updatedPet.petID ? updatedPet : pt))
+    );
+    try {
+      await axios.put(
+        `${API_BASE_URL}/${userID}/pets/${updatedPet.petID}`,
+        updatedPet
+      );
+      setLoadingPetIds((ids) => ids.filter((id) => id !== updatedPet.petID));
+      setLastEditedPet(updatedPet);
+      setIsEditConfirmation(false);
+      setShowEditConfModal(true);
+    } catch {
+      setLoadingPetIds((ids) => ids.filter((id) => id !== updatedPet.petID));
+      setError("Failed to update pet. Please try again.");
+      fetchPets();
+    }
+  };
+
+  const confirmDeletePet = (pet) => {
+    setPetToDelete(pet);
+    setShowDeleteConfModal(true);
+  };
+  const handleDeletePet = async () => {
+    if (!userID || !petToDelete) {
+      setError("Please log in to delete a pet.");
+      return;
+    }
+    setShowDeleteConfModal(false);
+    const petId = petToDelete.petID;
+    setLoadingPetIds((ids) => [...ids, petId]);
+    try {
+      await axios.delete(`${API_BASE_URL}/${userID}/pets/${petId}`);
+      setPets((p) => p.filter((pt) => pt.petID !== petId));
+      setLoadingPetIds((ids) => ids.filter((id) => id !== petId));
+      setPetToDelete(null);
+    } catch {
+      setLoadingPetIds((ids) => ids.filter((id) => id !== petId));
+      setError("Failed to delete pet. Please try again.");
+    }
+  };
+
+  const isPetLoading = (id) => loadingPetIds.includes(id);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-['Baloo'] overflow-auto">
-      <UserNavBar/>
+    <div className="w-full min-h-screen bg-[#FFF7EC] font-['Baloo'] overflow-x-hidden">
+      <UserNavBar />
 
-      {/* Main content area */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Content header with title and add button */}
-        <div className="flex justify-between items-center mb-10 -ml-60">
-          <h1 className="text-2xl font-bold text-[#042C3C]">Pet Profiles</h1>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6 mt-8">
+        <h2 className="text-3xl md:text-4xl font-bold text-[#042C3C]">Pet Profiles</h2> 
           <button
-            className="px-6 py-2 bg-[#EA6C7B] text-white rounded-full hover:bg-[#EA6C7B]/90 transition-colors flex items-center gap-2 mr-10"
+            className="flex items-center gap-2 px-4 py-1.5 bg-[#EA6C7B] text-white rounded-full text-sm hover:bg-[#EA6C7B]/90 transition"
             onClick={() => setShowAddPetModal(true)}
+            disabled={!userID}
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
             Add Pet
           </button>
         </div>
 
-        {/* Empty state */}
-        {pets.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-xl text-gray-500">You have no pets at the moment.</p>
-          </div>
-        )}
+        {error && <p className="text-red-500 mb-4 text-center text-sm">{error}</p>}
 
-        {/* Pet cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pets.map((pet) => (
-            <div key={pet.id} className="bg-white rounded-lg shadow-md overflow-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="text-gray-500 w-16 h-16 rounded-full bg-[#F0B542]/20 flex items-center justify-center text-[#F0B542] text-xl font-bold">
-                      {pet.name.charAt(0)}
+        {loading && pets.length === 0 ? (
+          <div className="flex flex-col items-center py-10">
+            <Loader className="h-8 w-8 text-[#EA6C7B] animate-spin" />
+            <p className="mt-2 text-gray-500 text-sm">Loading your pets...</p>
+          </div>
+        ) : pets.length === 0 ? (
+          <div className="flex flex-col items-center py-10">
+            <p className="text-gray-500 text-sm">You have no pets yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pets.map((pet) => (
+              <div
+                key={pet.petID}
+                className="bg-white rounded-lg shadow relative overflow-hidden text-sm"
+              >
+                {isPetLoading(pet.petID) && (
+                  <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-10">
+                    <Loader className="h-6 w-6 text-[#EA6C7B] animate-spin" />
+                    <p className="mt-1 text-gray-500 text-xs">Processing...</p>
+                  </div>
+                )}
+
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-[#F0B542]/20 flex items-center justify-center text-[#F0B542] text-lg font-bold">
+                        {pet.name?.[0]?.toUpperCase() || ""}
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-semibold text-[#042C3C]">
+                          {pet.name}
+                        </h2>
+                        <p className="text-xs text-gray-500">
+                          {pet.species} &middot; {pet.breed}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => confirmEditPet(pet)}
+                        disabled={!userID || isPetLoading(pet.petID)}
+                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => confirmDeletePet(pet)}
+                        disabled={!userID || isPetLoading(pet.petID)}
+                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <p className="text-[10px] text-[#042C3C]">Age</p>
+                      <p className="text-xs text-gray-500">{pet.age} yrs</p>
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-[#042C3C]">{pet.name}</h2>
-                      <p className="text-gray-500">
-                        {pet.species} • {pet.breed}
+                      <p className="text-[10px] text-[#042C3C]">Weight</p>
+                      <p className="text-xs text-gray-500">{pet.weight} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#042C3C]">Gender</p>
+                      <p className="text-xs text-gray-500">
+                        {pet.gender || "Unknown"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[#042C3C]">Allergies</p>
+                      <p className="text-xs text-gray-500">
+                        {pet.allergies && pet.allergies.length
+                          ? pet.allergies.join(", ")
+                          : "None"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="p-2 text-gray-500 hover:text-[#EA6C7B] rounded-full hover:bg-gray-100">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="p-2 text-gray-500 hover:text-[#EA6C7B] rounded-full hover:bg-gray-100"
-                      onClick={() => deletePet(pet.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-gray-500">Age</p>
-                    <p className="font-medium">{pet.age} years</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Weight</p>
-                    <p className="font-medium">{pet.weight} kg</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Gender</p>
-                    <p className="font-medium">{pet.gender || "Unknown"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Allergies</p>
-                    <p className="font-medium">
-                      {pet.allergies && pet.allergies.length > 0 ? pet.allergies.join(", ") : "None"}
-                    </p>
-                  </div>
+                <div className="border-t border-gray-100 grid grid-cols-3 divide-x text-xs">
+                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
+                    <Calendar className="h-4 w-4" />
+                    <span>Schedule</span>
+                  </button>
+                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
+                    <Activity className="h-4 w-4" />
+                    <span>Health</span>
+                  </button>
+                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
+                    <FileText className="h-4 w-4" />
+                    <span>Records</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="border-t border-gray-100 grid grid-cols-3 divide-x divide-gray-100">
-                <button className="py-3 flex items-center justify-center gap-1 text-sm text-[#042C3C] hover:bg-gray-50">
-                  <Calendar className="h-4 w-4" />
-                  <span>Schedule</span>
-                </button>
-                <button className="py-3 flex items-center justify-center gap-1 text-sm text-[#042C3C] hover:bg-gray-50">
-                  <Activity className="h-4 w-4" />
-                  <span>Health</span>
-                </button>
-                <button className="py-3 flex items-center justify-center gap-1 text-sm text-[#042C3C] hover:bg-gray-50">
-                  <FileText className="h-4 w-4" />
-                  <span>Records</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Add Pet Modal */}
-      <AddPetModal isOpen={showAddPetModal} onClose={() => setShowAddPetModal(false)} onPetAdded={handleAddPet} />
+      {/* Modals */}
+      <AddPetModal
+        isOpen={showAddPetModal}
+        onClose={() => setShowAddPetModal(false)}
+        onPetAdded={handleAddPet}
+        userID={userID}
+      />
 
-      {/* Bottom border line */}
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="border-t border-gray-200"></div>
-      </div>
+      <AddPetModal
+        isOpen={showEditPetModal}
+        onClose={() => setShowEditPetModal(false)}
+        onPetAdded={handleEditPet}
+        pet={selectedPet}
+        isEditMode
+        userID={userID}
+      />
+
+      <DeleteConfPetModal
+        isOpen={showDeleteConfModal}
+        onCancel={() => setShowDeleteConfModal(false)}
+        onConfirm={handleDeletePet}
+        petName={petToDelete?.name}
+      />
+
+      <CreateConfPetModal
+        isOpen={showCreateConfModal}
+        onClose={() => setShowCreateConfModal(false)}
+        petName={lastAddedPet?.name}
+      />
+
+      <EditConfPetModal
+        isOpen={showEditConfModal}
+        onClose={() => {
+          setShowEditConfModal(false);
+          if (!isEditConfirmation) setLastEditedPet(null);
+        }}
+        onConfirm={proceedWithEdit}
+        petName={isEditConfirmation ? petToEdit?.name : lastEditedPet?.name}
+        isConfirmation={isEditConfirmation}
+      />
     </div>
-  )
+  );
 }
-
-export default PetProfiles

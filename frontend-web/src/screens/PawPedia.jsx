@@ -1,18 +1,68 @@
 import GuestNavBar from "../components/GuestNavBar";
-
 import logo from "../assets/logo.png";
 import pawpedia from "../assets/pawpedia.png";
+import Fuse from "fuse.js"; // Import Fuse.js for fuzzy search
+import { useState, useEffect } from "react"; // Add useEffect for fetching data
+import { db } from "../config/firebase-config"; // Import Firestore (from your firebase-config.js)
+import { collection, getDocs } from "firebase/firestore"; // Firestore methods
 
 "use client"
 
 export default function PawPedia() {
-  // Define the colors
   const colors = {
     yellow: "#F0B542",
     darkBlue: "#042C3C",
     coral: "#EA6C7B",
     cream: "#FFF7EC",
-  }
+  };
+
+  // State for diseases, search query, and results
+  const [diseases, setDiseases] = useState([]);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+
+  // Fetch data from Firestore on component mount
+  useEffect(() => {
+    const fetchDiseases = async () => {
+      try {
+        const diseasesCollection = collection(db, "petHealthEncyclopedia");
+        const diseasesSnapshot = await getDocs(diseasesCollection);
+        const diseasesList = diseasesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        // Flatten the data for Fuse.js (since Firestore data may have nested subcollections)
+        const flattenedDiseases = diseasesList.map((disease) => ({
+          name: disease.id, // e.g., "cat"
+          animal: disease.id, // Use the document ID as the animal type
+          description: disease.dog?.breeds || "No description available", // Extract nested data if available
+        }));
+        setDiseases(flattenedDiseases);
+      } catch (error) {
+        console.error("Error fetching diseases:", error);
+      }
+    };
+
+    fetchDiseases();
+  }, []);
+
+  // Initialize Fuse.js with the fetched dataset
+  const fuse = new Fuse(diseases, {
+    keys: ["name", "animal", "description"], // Fields to search in
+    threshold: 0.3, // Adjust for fuzziness (0 = exact match, 1 = very loose)
+  });
+
+  // Handle search input
+  const handleSearch = (e) => {
+    const searchQuery = e.target.value;
+    setQuery(searchQuery);
+    if (searchQuery.length > 0) {
+      const searchResults = fuse.search(searchQuery);
+      setResults(searchResults.map((result) => result.item));
+    } else {
+      setResults(diseases); // Show all diseases if query is empty
+    }
+  };
 
   return (
     <div
@@ -40,7 +90,6 @@ export default function PawPedia() {
           transform: "translate(-30%, -30%)",
         }}
       ></div>
-
       <div
         style={{
           position: "absolute",
@@ -52,7 +101,6 @@ export default function PawPedia() {
           backgroundColor: colors.yellow,
         }}
       ></div>
-
       <div
         style={{
           position: "absolute",
@@ -65,7 +113,6 @@ export default function PawPedia() {
           transform: "translate(40%, 40%)",
         }}
       ></div>
-
       <div
         style={{
           position: "absolute",
@@ -77,7 +124,6 @@ export default function PawPedia() {
           backgroundColor: colors.yellow,
         }}
       ></div>
-
       <div
         style={{
           position: "absolute",
@@ -93,7 +139,7 @@ export default function PawPedia() {
       {/* Main Content */}
       <div
         style={{
-          maxWidth: "1200px",
+          maxWidth: "1000px",
           margin: "0 auto",
           padding: "0 20px",
           display: "flex",
@@ -116,11 +162,11 @@ export default function PawPedia() {
             src={pawpedia}
             alt="Pets lineup"
             style={{
-              width: "150%",
-              maxWidth: "1000px",
+              width: "130%",
+              maxWidth: "470px",
               height: "auto",
               objectFit: "contain",
-              marginTop: "-60px",
+              marginTop: "0px",
               marginBottom: "-20px",
               display: "block",
             }}
@@ -156,29 +202,64 @@ export default function PawPedia() {
             <input
               type="text"
               placeholder="Search conditions, diseases or illnesses..."
+              value={query}
+              onChange={handleSearch}
               style={{
                 flexGrow: 1,
-                color: "rgba(0, 0, 0, 1)", 
+                color: "rgba(0, 0, 0, 1)",
                 backgroundColor: "transparent",
                 outline: "none",
                 border: "none",
-                fontSize: "14px",
+                fontSize: "13px",
               }}
             />
             <button
               style={{
                 backgroundColor: colors.coral,
                 color: "white",
-                fontSize: "13px",
-                padding: "6px 16px",
+                fontSize: "12px",
+                padding: "6px 15px",
                 borderRadius: "9999px",
                 border: "none",
                 cursor: "pointer",
               }}
+              onClick={() => alert("AI search functionality can be added here!")}
             >
               Ask AI
             </button>
           </div>
+          {/* Search Results */}
+          {results.length > 0 && (
+            <div
+              style={{
+                marginTop: "20px",
+                width: "100%",
+                maxWidth: "300px",
+                backgroundColor: "white",
+                borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                padding: "10px",
+              }}
+            >
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: "10px",
+                    borderBottom:
+                      index < results.length - 1 ? "1px solid #e5e7eb" : "none",
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: "16px", color: colors.darkBlue }}>
+                    {result.name}
+                  </h3>
+                  <p style={{ margin: "5px 0 0", fontSize: "14px", color: "#6b7280" }}>
+                    {result.animal} - {result.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       {/* Font imports */}

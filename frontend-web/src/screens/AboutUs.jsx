@@ -74,11 +74,11 @@ export default function AboutUs() {
           alt="Bernese Mountain Dog"
           sx={{
             height: "auto",
-            width: "80%",
+            width: "58%",
             objectFit: "contain",
             objectPosition: "left center",
             marginTop: "-90px",
-            marginLeft: "-350px"
+            marginLeft: "-200px"
           }}
         />
         <Box

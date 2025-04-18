@@ -141,10 +141,10 @@ export default function UserPawPedia() {
             alt="Pets lineup"
             style={{
               width: "130%",
-              maxWidth: "1000px",
+              maxWidth: "470px",
               height: "auto",
               objectFit: "contain",
-              marginTop: "10px",
+              marginTop: "0",
               marginBottom: "-20px",
               display: "block",
             }}

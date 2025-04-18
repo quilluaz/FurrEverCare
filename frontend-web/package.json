@@ -24,6 +24,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^11.6.0",
     "frontend-web": "file:",
+    "fuse.js": "^7.1.0",
     "lucide-react": "^0.486.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -44,5 +45,10 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.2",
     "vite": "^6.2.0"
-  }
+  },
+  "description": "<<<<<<< HEAD\r # React + Vite",
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

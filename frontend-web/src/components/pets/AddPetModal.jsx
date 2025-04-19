@@ -1,10 +1,8 @@
+import { useState, useEffect } from "react";
+import { PawPrint, X } from "lucide-react";
 
-
-import { useState } from "react"
-import { PawPrint, X } from "lucide-react"
-
-export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
-  const [pet, setPet] = useState({
+export default function AddPetModal({ onPetAdded, isOpen, onClose, pet, isEditMode = false, userID }) {
+  const [formData, setFormData] = useState({
     name: "",
     species: "",
     breed: "",
@@ -12,59 +10,70 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
     age: "",
     weight: "",
     allergies: "",
-  })
+  });
+
+  // Populate form with pet data when editing
+  useEffect(() => {
+    if (isEditMode && pet) {
+      setFormData({
+        petID: pet.petID || "",
+        name: pet.name || "",
+        species: pet.species || "",
+        breed: pet.breed || "",
+        gender: pet.gender || "",
+        age: pet.age?.toString() || "",
+        weight: pet.weight?.toString() || "",
+        allergies: pet.allergies?.join(", ") || "",
+      });
+    }
+  }, [isEditMode, pet]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setPet((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSelectChange = (name, value) => {
-    setPet((prev) => ({ ...prev, [name]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    // Convert age to number
     const newPet = {
-      ...pet,
-      age: Number.parseInt(pet.age) || 0,
-      weight: Number.parseFloat(pet.weight) || 0,
-      allergies: pet.allergies
+      ...formData,
+      age: parseInt(formData.age) || 0,
+      weight: parseFloat(formData.weight) || 0,
+      allergies: formData.allergies
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean),
+    };
+
+    if (isEditMode) {
+      newPet.petID = formData.petID;
     }
 
-    // Here you would typically send this data to your API
-    console.log("Adding new pet:", newPet)
-
-    // Notify parent component
-    if (onPetAdded) {
-      onPetAdded(newPet)
+    try {
+      await onPetAdded(newPet);
+      // Reset form
+      setFormData({
+        name: "",
+        species: "",
+        breed: "",
+        gender: "",
+        age: "",
+        weight: "",
+        allergies: "",
+      });
+      onClose();
+    } catch (err) {
+      alert(`Failed to ${isEditMode ? "update" : "add"} pet. Please try again.`);
+      console.error(err);
     }
+  };
 
-    // Show success toast (simplified)
-    alert(`${pet.name} has been added to your pets.`)
-
-    // Reset form and close dialog
-    setPet({
-      name: "",
-      species: "",
-      breed: "",
-      gender: "",
-      age: "",
-      weight: "",
-      allergies: "",
-    })
-
-    if (onClose) {
-      onClose()
-    }
-  }
-
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 font-['Baloo']">
@@ -72,9 +81,12 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-bold flex items-center text-[#042C3C]">
             <PawPrint className="h-5 w-5 mr-2 text-[#EA6C7B]" />
-            Add New Pet
+            {isEditMode ? "Edit Pet" : "Add New Pet"}
           </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-[#EA6C7B] rounded-full p-1 hover:bg-gray-100">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-[#EA6C7B] rounded-full p-1 hover:bg-gray-100"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -87,7 +99,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
             <input
               id="name"
               name="name"
-              value={pet.name}
+              value={formData.name}
               onChange={handleChange}
               className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
               required
@@ -102,7 +114,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
               <select
                 id="species"
                 name="species"
-                value={pet.species}
+                value={formData.species}
                 onChange={(e) => handleSelectChange("species", e.target.value)}
                 className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
                 required
@@ -124,7 +136,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
               <input
                 id="breed"
                 name="breed"
-                value={pet.breed}
+                value={formData.breed}
                 onChange={handleChange}
                 className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
               />
@@ -139,7 +151,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
               <select
                 id="gender"
                 name="gender"
-                value={pet.gender}
+                value={formData.gender}
                 onChange={(e) => handleSelectChange("gender", e.target.value)}
                 className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
               >
@@ -161,7 +173,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
                 type="number"
                 min="0"
                 step="1"
-                value={pet.age}
+                value={formData.age}
                 onChange={handleChange}
                 className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
               />
@@ -176,7 +188,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
                 type="number"
                 min="0"
                 step="0.1"
-                value={pet.weight}
+                value={formData.weight}
                 onChange={handleChange}
                 className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
               />
@@ -190,7 +202,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
             <textarea
               id="allergies"
               name="allergies"
-              value={pet.allergies}
+              value={formData.allergies}
               onChange={handleChange}
               placeholder="Enter allergies separated by commas"
               className="w-full p-2 bg-[#FFF7EC] border-2 border-[#EA6C7B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
@@ -211,11 +223,11 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose }) {
               type="submit"
               className="px-4 py-2 bg-[#8A973F] text-white rounded-md hover:bg-[#8A973F]/90 transition-colors"
             >
-              Add Pet
+              {isEditMode ? "Update Pet" : "Add Pet"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }

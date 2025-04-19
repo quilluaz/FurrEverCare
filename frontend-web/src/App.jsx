@@ -1,7 +1,5 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Ensure Routes is imported
-import GuestNavBar from "./components/GuestNavBar";
 
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Ensure Routes is imported
 import PawPedia from "./screens/PawPedia";
 import AboutUs from "./screens/AboutUs";
 import TreatmentTracker from "./screens/TreatmentTracker";
@@ -13,6 +11,9 @@ import SignUpPage from "./screens/SignUpPage";
 import PetProfiles from "./screens/PetProfiles";
 import UserPawPedia from "./screens/UserPawPedia";
 import UserProfile from "./screens/UserProfile";
+import AuthService from './config/AuthService';
+import React from "react";
+
 
 
 const colors = {
@@ -23,6 +24,7 @@ const colors = {
 };
 
 function App() {
+    AuthService.init();
   return (
     <Router>
       <div style={{ overflowX: 'hidden' }}> {/* Prevent horizontal scrolling */}
@@ -41,6 +43,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    
   );
 }
 

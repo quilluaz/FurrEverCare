@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react";
 import { Plus, Clock, Bell, Calendar, Activity, Check, X, AlertCircle } from "lucide-react";
 import DailyTaskForm from "../components/DailyTaskForm";
@@ -110,92 +108,102 @@ export default function TreatmentTracker() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF7EC] font-['Baloo'] overflow-x-hidden">
-
+    <div className="min-h-screen bg-[#FFF7EC] font-['Baloo'] w-full overflow-hidden">
       <UserNavBar />
 
       {/* Main content area */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#042C3C]">Treatment Tracker</h1>
-          <p className="text-gray-600 mt-1">
-            Interactive tool to manage and track your pet's medication and treatments.
+          <h1 className="text-xl sm:text-2xl font-bold text-[#042C3C]">
+            Treatment Tracker
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-600 mt-1">
+            Interactive tool to manage and track your pet's medication and
+            treatments.
           </p>
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 sm:mb-8">
           <button
-            className="px-6 py-2 bg-[#EA6C7B] text-white rounded-full hover:bg-[#EA6C7B]/90 transition-colors flex items-center gap-2"
             onClick={handleOpenAddMedicationModal}
+            className="flex items-center gap-1 sm:gap-2 px-4 sm:px-6 py-2 bg-[#EA6C7B] text-white rounded-full hover:bg-[#EA6C7B]/90 transition-colors text-xs sm:text-sm"
           >
             <Plus className="h-4 w-4" />
-            Add Medication
+            <span className="whitespace-nowrap">Add Medication</span>
           </button>
+
           <button
-            className="px-6 py-2 bg-[#8A973F] text-white rounded-full hover:bg-[#8A973F]/90 transition-colors flex items-center gap-2"
             onClick={handleOpenLogTreatmentModal}
+            className="flex items-center gap-1 sm:gap-2 px-4 sm:px-6 py-2 bg-[#8A973F] text-white rounded-full hover:bg-[#8A973F]/90 transition-colors text-xs sm:text-sm"
           >
             <Activity className="h-4 w-4" />
-            Log Treatment
+            <span className="whitespace-nowrap">Log Treatment</span>
           </button>
+
           <button
-            className="px-6 py-2 bg-[#F0B542] text-white rounded-full hover:bg-[#F0B542]/90 transition-colors flex items-center gap-2"
             onClick={() => setShowDailyTaskForm(true)}
+            className="flex items-center gap-1 sm:gap-2 px-4 sm:px-6 py-2 bg-[#F0B542] text-white rounded-full hover:bg-[#F0B542]/90 transition-colors text-xs sm:text-sm"
           >
             <Calendar className="h-4 w-4" />
-            Add Daily Task
+            <span className="whitespace-nowrap">Add Daily Task</span>
           </button>
         </div>
 
         {/* Content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Daily Medications */}
-          <div className="lg:col-span-2">
+          <div className="md:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border-2 border-[#EA6C7B] h-full">
-              <div className="p-4 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-[#042C3C] flex items-center gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-100">
+                <h2 className="text-base sm:text-lg font-bold text-[#042C3C] flex items-center gap-2">
                   <Clock className="h-5 w-5 text-[#EA6C7B]" />
                   Daily Medications
                 </h2>
               </div>
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {medications.length === 0 ? (
-                  <p className="text-gray-500 text-center">You have not added any medications yet.</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    You have not added any medications yet.
+                  </p>
                 ) : (
-                  <div className="space-y-4">
-                    {medications.map((medication) => (
+                  <div className="space-y-3 sm:space-y-4">
+                    {medications.map((med) => (
                       <div
-                        key={medication.id}
-                        className="p-4 bg-gray-50 rounded-lg border-l-4 border-[#EA6C7B] flex justify-between items-center"
+                        key={med.id}
+                        className="p-3 sm:p-4 bg-gray-50 rounded-lg border-l-4 border-[#EA6C7B] flex justify-between items-center flex-wrap sm:flex-nowrap gap-2"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                           <button
-                            onClick={() => toggleMedicationCompletion(medication.id)}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                              medication.completed
+                            onClick={() => toggleMedicationCompletion(med.id)}
+                            className={`min-w-6 h-6 rounded-full flex items-center justify-center ${
+                              med.completed
                                 ? "bg-green-500 text-white"
                                 : "border-2 border-gray-300 text-transparent hover:border-[#EA6C7B]"
                             }`}
                           >
-                            {medication.completed && <Check className="h-4 w-4" />}
+                            {med.completed && <Check className="h-4 w-4" />}
                           </button>
-                          <div>
-                            <h3 className="font-medium text-[#042C3C]">{medication.name}</h3>
-                            <p className="text-sm text-gray-500">
-                              <span className="inline-block mr-2">◦ {medication.time}</span>
-                              <span className="inline-block">{medication.dosage}</span>
+                          <div className="overflow-hidden">
+                            <h3 className="font-medium text-[#042C3C] truncate text-xs sm:text-sm">
+                              {med.name}
+                            </h3>
+                            <p className="text-[10px] sm:text-xs text-gray-500 flex flex-wrap gap-1 sm:gap-2">
+                              <span>◦ {med.time}</span>
+                              <span>{med.dosage}</span>
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center w-full sm:w-auto justify-end">
                           <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              medication.completed ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                            className={`px-2 py-1 text-[10px] sm:text-xs rounded-full ${
+                              med.completed
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
                             }`}
                           >
-                            {medication.completed ? "Completed" : "Pending"}
+                            {med.completed ? "Completed" : "Pending"}
                           </span>
                         </div>
                       </div>
@@ -207,39 +215,51 @@ export default function TreatmentTracker() {
           </div>
 
           {/* Daily Tasks */}
-          <div className="lg:col-span-1">
+          <div className="md:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border-2 border-[#F0B542] h-full">
-              <div className="p-4 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-[#042C3C] flex items-center gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-100">
+                <h2 className="text-base sm:text-lg font-bold text-[#042C3C] flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-[#F0B542]" />
                   Daily Tasks
                 </h2>
               </div>
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {dailyTasks.length === 0 ? (
-                  <p className="text-gray-500 text-center">No tasks for today.</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No tasks for today.
+                  </p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {dailyTasks.map((task) => (
-                      <div key={task.id} className="p-3 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-500">{task.time}</span>
+                      <div
+                        key={task.id}
+                        className="p-2 sm:p-3 rounded-lg bg-gray-50"
+                      >
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                              <span className="text-[10px] sm:text-xs font-medium text-gray-500">
+                                {task.time}
+                              </span>
                               <span
-                                className={`px-2 py-0.5 text-xs rounded-full ${
+                                className={`px-2 py-0.5 text-[9px] sm:text-[10px] rounded-full ${
                                   task.status === "completed"
                                     ? "bg-green-100 text-green-800"
                                     : task.status === "missed"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-yellow-100 text-yellow-800"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-yellow-100 text-yellow-800"
                                 }`}
                               >
-                                {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                                {task.status.charAt(0).toUpperCase() +
+                                  task.status.slice(1)}
                               </span>
                             </div>
-                            <p className="font-medium text-[#042C3C]">{task.name}</p>
-                            <p className="text-xs text-gray-500">For {task.pet}</p>
+                            <p className="font-medium text-[#042C3C] truncate text-xs sm:text-sm">
+                              {task.name}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-gray-500 truncate">
+                              For {task.pet}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -251,47 +271,56 @@ export default function TreatmentTracker() {
           </div>
 
           {/* Ongoing Treatments */}
-          <div className="lg:col-span-2">
+          <div className="md:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border-2 border-[#8A973F] h-full">
-              <div className="p-4 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-[#042C3C] flex items-center gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-100">
+                <h2 className="text-base sm:text-lg font-bold text-[#042C3C] flex items-center gap-2">
                   <Activity className="h-5 w-5 text-[#8A973F]" />
                   Ongoing Treatments
                 </h2>
               </div>
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {treatments.length === 0 ? (
-                  <p className="text-gray-500 text-center">No ongoing treatments.</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No ongoing treatments.
+                  </p>
                 ) : (
-                  <div className="space-y-4">
-                    {treatments.map((treatment) => (
-                      <div key={treatment.id} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-medium text-[#042C3C]">{treatment.name}</h3>
-                            <p className="text-sm text-gray-500">{treatment.description}</p>
+                  <div className="space-y-3 sm:space-y-4">
+                    {treatments.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-3 sm:p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex flex-wrap sm:flex-nowrap justify-between items-start mb-2 gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-medium text-[#042C3C] truncate text-xs sm:text-sm">
+                              {t.name}
+                            </h3>
+                            <p className="text-[10px] sm:text-xs text-gray-500">
+                              {t.description}
+                            </p>
                           </div>
                           <div className="text-right">
-                            <span className="px-2 py-1 text-xs rounded-full bg-[#8A973F]/20 text-[#8A973F]">
-                              {treatment.duration}
+                            <span className="px-2 py-1 text-[9px] sm:text-[10px] rounded-full bg-[#8A973F]/20 text-[#8A973F] whitespace-nowrap">
+                              {t.duration}
                             </span>
                           </div>
                         </div>
                         <div className="mt-3">
-                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <div className="flex justify-between text-[9px] sm:text-[10px] text-gray-500 mb-1">
                             <span>Progress</span>
-                            <span>{treatment.progress}%</span>
+                            <span>{t.progress}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                             <div
                               className="bg-[#8A973F] h-2 rounded-full"
-                              style={{ width: `${treatment.progress}%` }}
-                            ></div>
+                              style={{ width: `${t.progress}%` }}
+                            />
                           </div>
                           <div className="flex justify-end">
                             <button
-                              className="px-4 py-1.5 text-sm border border-[#8A973F] text-[#8A973F] rounded-md hover:bg-[#8A973F]/10"
-                              onClick={() => handleOpenUpdateProgressModal(treatment)}
+                              onClick={() => handleOpenUpdateProgressModal(t)}
+                              className="px-3 sm:px-4 py-1.5 text-[9px] sm:text-xs border border-[#8A973F] text-[#8A973F] rounded-md hover:bg-[#8A973F]/10"
                             >
                               Update Progress
                             </button>
@@ -306,37 +335,51 @@ export default function TreatmentTracker() {
           </div>
 
           {/* Alerts */}
-          <div className="lg:col-span-1">
+          <div className="md:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border-2 border-[#042C3C] h-full">
-              <div className="p-4 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-[#042C3C] flex items-center gap-2">
+              <div className="p-3 sm:p-4 border-b border-gray-100">
+                <h2 className="text-base sm:text-lg font-bold text-[#042C3C] flex items-center gap-2">
                   <Bell className="h-5 w-5 text-[#042C3C]" />
                   Alerts
                 </h2>
               </div>
-              <div className="p-6 flex items-center justify-center min-h-[200px]">
+              <div className="p-4 sm:p-6 flex items-center justify-center min-h-[200px]">
                 {alerts.length === 0 ? (
-                  <p className="text-gray-500 text-center">No active alerts.</p>
+                  <p className="text-xs text-gray-500 text-center">
+                    No active alerts.
+                  </p>
                 ) : (
-                  <div className="w-full space-y-3">
+                  <div className="w-full space-y-2 sm:space-y-3">
                     {alerts.map((alert) => (
                       <div
                         key={alert.id}
-                        className={`p-3 rounded-lg relative ${alert.type === "missed" ? "bg-red-50" : "bg-yellow-50"}`}
+                        className={`p-3 rounded-lg relative ${
+                          alert.type === "missed" ? "bg-red-50" : "bg-yellow-50"
+                        }`}
                       >
                         <button
-                          onClick={() => setAlerts(alerts.filter((a) => a.id !== alert.id))}
+                          onClick={() =>
+                            setAlerts(alerts.filter((a) => a.id !== alert.id))
+                          }
                           className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
                         >
                           <X className="h-4 w-4" />
                         </button>
-                        <div className="flex items-start gap-3 pr-6">
+                        <div className="flex items-start gap-2 sm:gap-3 pr-6">
                           <AlertCircle
-                            className={`h-5 w-5 mt-0.5 ${alert.type === "missed" ? "text-red-500" : "text-yellow-500"}`}
+                            className={`h-5 w-5 mt-0.5 ${
+                              alert.type === "missed"
+                                ? "text-red-500"
+                                : "text-yellow-500"
+                            }`}
                           />
-                          <div>
-                            <p className="font-medium text-[#042C3C]">{alert.message}</p>
-                            <p className="text-xs text-gray-500">{alert.date}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-[#042C3C] break-words text-xs sm:text-sm">
+                              {alert.message}
+                            </p>
+                            <p className="text-[9px] sm:text-[10px] text-gray-500">
+                              {alert.date}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -351,10 +394,16 @@ export default function TreatmentTracker() {
 
       {/* Modals */}
       {showAddMedicationModal && (
-        <AddMedicationModal isOpen={showAddMedicationModal} onClose={handleCloseAddMedicationModal} />
+        <AddMedicationModal
+          isOpen={showAddMedicationModal}
+          onClose={handleCloseAddMedicationModal}
+        />
       )}
       {showLogTreatmentModal && (
-        <LogTreatmentModal isOpen={showLogTreatmentModal} onClose={handleCloseLogTreatmentModal} />
+        <LogTreatmentModal
+          isOpen={showLogTreatmentModal}
+          onClose={handleCloseLogTreatmentModal}
+        />
       )}
       {showUpdateProgressModal && selectedTreatment && (
         <UpdateProgressModal
@@ -362,7 +411,9 @@ export default function TreatmentTracker() {
           onClose={handleCloseUpdateProgressModal}
           initialProgress={selectedTreatment.progress}
           treatmentName={selectedTreatment.name}
-          onUpdateProgress={(newProgress) => updateProgress(selectedTreatment.id, newProgress)}
+          onUpdateProgress={(newProgress) =>
+            updateProgress(selectedTreatment.id, newProgress)
+          }
         />
       )}
 

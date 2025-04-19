@@ -23,7 +23,6 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
       onLogTreatment(treatment)
     }
 
-    // Reset form
     setTreatment({
       name: "",
       type: "",
@@ -39,19 +38,19 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 font-['Baloo']">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 font-['Baloo'] text-sm">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-[#042C3C]">Log Treatment</h2>
+        <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-[#042C3C]">Log Treatment</h2>
             <button onClick={onClose} className="text-gray-500 hover:text-[#8A973F] rounded-full p-1 hover:bg-gray-100">
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label htmlFor="name" className="block text-sm font-bold text-[#042C3C] mb-2">
+              <label htmlFor="name" className="block text-xs font-bold text-[#042C3C] mb-1">
                 Treatment Name
               </label>
               <input
@@ -59,13 +58,13 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                 name="name"
                 value={treatment.name}
                 onChange={handleChange}
-                className="w-full p-3 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F]"
+                className="w-full p-2 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] text-sm text-gray-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="type" className="block text-sm font-bold text-[#042C3C] mb-2">
+              <label htmlFor="type" className="block text-xs font-bold text-[#042C3C] mb-1">
                 Treatment Type
               </label>
               <select
@@ -73,12 +72,10 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                 name="type"
                 value={treatment.type}
                 onChange={handleChange}
-                className="text-gray-500 w-full p-3 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] appearance-none"
+                className="w-full p-2 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] appearance-none text-sm text-gray-500"
                 required
               >
-                <option value="" disabled>
-                  Select Treatment Type
-                </option>
+                <option value="" disabled>Select Treatment Type</option>
                 <option value="medication">Medication</option>
                 <option value="therapy">Therapy</option>
                 <option value="surgery">Surgery</option>
@@ -89,7 +86,7 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
             </div>
 
             <div>
-              <label htmlFor="pet" className="block text-sm font-bold text-[#042C3C] mb-2">
+              <label htmlFor="pet" className="block text-xs font-bold text-[#042C3C] mb-1">
                 Pet
               </label>
               <select
@@ -97,12 +94,10 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                 name="pet"
                 value={treatment.pet}
                 onChange={handleChange}
-                className="text-gray-500 w-full p-3 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] appearance-none"
+                className="w-full p-2 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] appearance-none text-sm text-gray-500"
                 required
               >
-                <option value="" disabled>
-                  Select Pet
-                </option>
+                <option value="" disabled>Select Pet</option>
                 <option value="buddy">Buddy (Dog)</option>
                 <option value="whiskers">Whiskers (Cat)</option>
                 <option value="thumper">Thumper (Rabbit)</option>
@@ -111,12 +106,12 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="startDate" className="block text-sm font-bold text-[#042C3C] mb-2">
+                <label htmlFor="startDate" className="block text-xs font-bold text-[#042C3C] mb-1">
                   Start Date
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
                     id="startDate"
@@ -124,19 +119,19 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                     type="date"
                     value={treatment.startDate}
                     onChange={handleChange}
-                    className="text-gray-500 w-full p-3 pl-10 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F]"
+                    className="w-full p-2 pl-10 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] text-sm text-gray-500"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="endDate" className="block text-sm font-bold text-[#042C3C] mb-2">
+                <label htmlFor="endDate" className="block text-xs font-bold text-[#042C3C] mb-1">
                   End Date
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-gray-400" />
                   </div>
                   <input
                     id="endDate"
@@ -144,14 +139,14 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                     type="date"
                     value={treatment.endDate}
                     onChange={handleChange}
-                    className="text-gray-500 w-full p-3 pl-10 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F]"
+                    className="w-full p-2 pl-10 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] text-sm text-gray-500"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-bold text-[#042C3C] mb-2">
+              <label htmlFor="notes" className="block text-xs font-bold text-[#042C3C] mb-1">
                 Notes
               </label>
               <textarea
@@ -160,22 +155,22 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
                 value={treatment.notes}
                 onChange={handleChange}
                 placeholder="Treatment details"
-                className="text-gray-500 w-full p-3 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F]"
-                rows="4"
+                className="w-full p-2 bg-[#FFF7EC] border-2 border-[#8A973F]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8A973F] text-sm text-gray-500"
+                rows="3"
               />
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
+            <div className="flex justify-end space-x-2 pt-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2 border-2 border-[#8A973F] text-[#8A973F] rounded-full hover:bg-[#8A973F]/10 transition-colors"
+                className="px-4 py-1.5 border-2 border-[#8A973F] text-[#8A973F] rounded-full hover:bg-[#8A973F]/10 transition-colors text-sm"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-[#8A973F] text-white rounded-full hover:bg-[#8A973F]/90 transition-colors"
+                className="px-4 py-1.5 bg-[#8A973F] text-white rounded-full hover:bg-[#8A973F]/90 transition-colors text-sm"
               >
                 Log Treatment
               </button>
@@ -186,4 +181,5 @@ function LogTreatmentModal({ isOpen, onClose, onLogTreatment }) {
     </div>
   )
 }
-export default LogTreatmentModal;
+
+export default LogTreatmentModal

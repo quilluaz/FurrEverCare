@@ -42,7 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 logger.error("Error extracting user ID from token", e);
             }
         }
-
+        
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 if (userService.getUserById(userId) != null && !jwtUtil.isTokenExpired(jwt)) {

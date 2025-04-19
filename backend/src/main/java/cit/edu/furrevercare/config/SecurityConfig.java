@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Allow unauthenticated access to auth endpoints
+                        .requestMatchers("/api/auth/login").permitAll() // Add this line explicitly
+                        .requestMatchers("/api/auth/register").permitAll() 
                         .anyRequest().authenticated() // Require authentication for all other requests
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -46,6 +48,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Origin"));
+        configuration.setExposedHeaders(Collections.singletonList("Authorization"));    
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

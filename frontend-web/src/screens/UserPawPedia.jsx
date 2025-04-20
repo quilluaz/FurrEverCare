@@ -1,25 +1,26 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import UserNavBar from "../components/UserNavBar"
 import WelcomeMessageModal from "../components/WelcomeMessageModal"
 import pawpedia from "../assets/pawpedia.png"
 
 export default function UserPawPedia() {
-  // State for welcome modal
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+  const [query, setQuery] = useState("")
 
-  // Show welcome modal when component mounts
   useEffect(() => {
-    // Check if the modal has already been shown in this session
     const hasSeenWelcome = sessionStorage.getItem("seenWelcomePawPedia")
     if (!hasSeenWelcome) {
       setShowWelcomeModal(true)
-      sessionStorage.setItem("seenWelcomePawPedia", "true") // Mark the modal as shown
+      sessionStorage.setItem("seenWelcomePawPedia", "true")
     }
   }, [])
 
-  // Define the colors
+  const handleSearch = () => {
+    if (!query.trim()) return
+    const searchQuery = encodeURIComponent(query)
+    window.location.href = `https://www.google.com/search?q=${searchQuery}`
+  }
+
   const colors = {
     yellow: "#F0B542",
     darkBlue: "#042C3C",
@@ -44,77 +45,12 @@ export default function UserPawPedia() {
         <UserNavBar />
       </div>
 
-      {/* Welcome Modal */}
       <WelcomeMessageModal
         isOpen={showWelcomeModal}
         onClose={() => setShowWelcomeModal(false)}
-        userName="" // You can pass the user's name here if available
+        userName=""
       />
 
-      {/* Background Circles */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "230px",
-          height: "230px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-          transform: "translate(-30%, -30%)",
-        }}
-      ></div>
-
-      <div
-        style={{
-          position: "absolute",
-          top: "120px",
-          left: "180px",
-          width: "100px",
-          height: "100px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-          transform: "translate(40%, 40%)",
-        }}
-      ></div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "150px",
-          right: "100px",
-          width: "80px",
-          height: "80px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "300px",
-          right: "200px",
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
-
-      {/* Main Content */}
       <div
         style={{
           maxWidth: "1200px",
@@ -135,7 +71,6 @@ export default function UserPawPedia() {
             padding: "20px",
           }}
         >
-          {/* Pets Image */}
           <img
             src={pawpedia || "/placeholder.svg"}
             alt="Pets lineup"
@@ -149,6 +84,7 @@ export default function UserPawPedia() {
               display: "block",
             }}
           />
+
           {/* Search Bar */}
           <div
             style={{
@@ -160,6 +96,7 @@ export default function UserPawPedia() {
               borderRadius: "9999px",
               backgroundColor: "white",
               padding: "8px 16px",
+              marginBottom: "30px",
             }}
           >
             <svg
@@ -179,6 +116,8 @@ export default function UserPawPedia() {
             </svg>
             <input
               type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conditions, diseases or illnesses..."
               style={{
                 flexGrow: 1,
@@ -190,6 +129,7 @@ export default function UserPawPedia() {
               }}
             />
             <button
+              onClick={handleSearch}
               style={{
                 backgroundColor: colors.coral,
                 color: "white",
@@ -200,29 +140,56 @@ export default function UserPawPedia() {
                 cursor: "pointer",
               }}
             >
-              Ask AI
+              Search
             </button>
           </div>
         </div>
       </div>
-      {/* Font imports */}
+
+           {/* ✅ Add the floating AI button here */}
+      {/* Floating AI Assistance Button */}
+      <button
+        onClick={() => alert("AI Assistance coming soon!")}
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          left: "20px",
+          backgroundColor: colors.coral,
+          color: "white",
+          width: "50px",
+          height: "50px",
+          borderRadius: "50%",
+          border: "none",
+          fontSize: "22px",
+          cursor: "pointer",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}
+        title="AI Assistance"
+      >
+        🤖
+      </button>
+
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
-            html, body {
-              margin: 0;
-              padding: 0;
-              height: 100%;
-              width: 100%;
-              overflow-x: hidden;
-            }
-            #root {
-              min-height: 100vh;
-              display: flex;
-              flex-direction: column;
-            }
-          `,
+          @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
+          html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+          }
+          #root {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+        `,
         }}
       />
     </div>

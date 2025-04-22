@@ -1,12 +1,8 @@
 import GuestNavBar from "../components/GuestNavBar";
-import logo from "../assets/logo.png";
 import pawpedia from "../assets/pawpedia.png";
-import Fuse from "fuse.js"; // Import Fuse.js for fuzzy search
-import { useState, useEffect } from "react"; // Add useEffect for fetching data
-import { db } from "../config/firebase-config"; // Import Firestore (from your firebase-config.js)
-import { collection, getDocs } from "firebase/firestore"; // Firestore methods
+import { useState, useEffect } from "react";
+import AIModal from "../components/AIModal";
 
-"use client"
 
 export default function PawPedia() {
   const colors = {
@@ -16,52 +12,92 @@ export default function PawPedia() {
     cream: "#FFF7EC",
   };
 
-  // State for diseases, search query, and results
-  const [diseases, setDiseases] = useState([]);
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
   const [results, setResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
+ 
 
-  // Fetch data from Firestore on component mount
+
+  const filterKeywords = [
+    "animal", "pet", "dog", "cat", "canine", "feline", "puppy", "kitten", "rabbit", 
+    "parrot", "hamster", "illness", "disease", "condition", "infection", "allergy", 
+    "vet", "veterinary", "symptom", "sick", "vomiting", "diarrhea", "limping", "skin", 
+    "fur", "ticks", "fleas", "worms", "respiratory", "eyes", "ears", "health", 
+    "treatment", "vaccination", "diagnosis", "medication", "rabies",
+    "Addison's Disease in Dogs", "Anaemia in Pets", "Anal Sac Disease in Dogs", "Asthma In Cats", 
+    "Atrial Fibrillation in Dogs", "Bladder Tumours in Cats & Dogs", "Chronic Diarrhoea", 
+    "Chronic Vomiting in Pets", "Congestive Heart Failure in Cats", "Congestive Heart Failure in Dogs", 
+    "Cruciate Disease in Dogs", "Cushing's Disease in Dogs", "Degenerative Mitral Valve Disease in Dogs", 
+    "Diabetes in Cats", "Diabetes in Dogs", "Dilated Cardiomyopathy in Dogs", "Dystocia in Dogs", 
+    "Ear Disease (Otitis) in Dogs", "Elbow Dysplasia in Dogs", "Feline Aortic Thromboembolism in Cats", 
+    "Feline Infectious Peritonitis (FIP) in Cats", "Feline Lower Urinary Tract Disease (FLUTD)", 
+    "Fleas in Cats & Dogs", "Flystrike in Rabbits", "Fractures In Pets", "Heart Disease in Cats & Dogs", 
+    "Hip Dysplasia in Dogs", "Hypercalcaemia In Pets", "Hypertension (high blood pressure) in Cats & Dogs", 
+    "Hyperthyroidism in Cats", "Hypertrophic Cardiomyopathy In Cats", "Hypothyroidism In Dogs", 
+    "Immune-Mediated Haemolytic Anaemia (IMHA)", "Immune-Mediated Thrombocytopenia In Pets", 
+    "Kidney Disease In Cats And Dogs", "Laryngeal Paralysis In Dogs", "Leishmaniosis In Dogs", 
+    "Leptospirosis in Dogs", "Liver Disease", "Lumps & Bumps In Pets", "Lungworm in Dogs", "Lymphoma in Cats", 
+    "Lymphoma in Dogs", "Mammary (breast) Tumours in Cats & Dogs", "Mass Removal In Pets", 
+    "Mast Cell Tumours in Dogs", "Nasal Disease In Dogs", "Oral Tumours In Cats & Dogs", 
+    "Osteoarthritis In Cats", "Osteoarthritis in Dogs", "Over-Grooming in Cats", "Pancreatitis In Dogs", 
+    "Panosteitis In Dogs", "Parvovirus in Dogs", "Patella Luxation in Dogs", "Pericardial Effusion In Dogs", 
+    "Polyuria-Polydipsia (PUPD) In Pets", "Porto-systemic Shunts", "Pregnancy in Dogs", 
+    "Prostatic Disease In Dogs", "Pruritus (Itching) In Dogs", "Pyometra in Dogs & Cats", 
+    "Scrotal Urethrostomy In Dogs", "Seizures In Pets", "Soft Tissue Sarcoma in Pets", 
+    "Splenic Masses in Dogs", "Ticks In Cats &  Urethral Obstruction In Cats", "Urinary Incontinence in Dogs", "Urolithiasis In Pets", 
+  "Vestibular Disease In Dogs", "Worms in Cats"
+];
+  
+  // Fetch autocomplete suggestions
   useEffect(() => {
-    const fetchDiseases = async () => {
-      try {
-        const diseasesCollection = collection(db, "petHealthEncyclopedia");
-        const diseasesSnapshot = await getDocs(diseasesCollection);
-        const diseasesList = diseasesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        // Flatten the data for Fuse.js (since Firestore data may have nested subcollections)
-        const flattenedDiseases = diseasesList.map((disease) => ({
-          name: disease.id, // e.g., "cat"
-          animal: disease.id, // Use the document ID as the animal type
-          description: disease.dog?.breeds || "No description available", // Extract nested data if available
-        }));
-        setDiseases(flattenedDiseases);
-      } catch (error) {
-        console.error("Error fetching diseases:", error);
-      }
-    };
-
-    fetchDiseases();
-  }, []);
-
-  // Initialize Fuse.js with the fetched dataset
-  const fuse = new Fuse(diseases, {
-    keys: ["name", "animal", "description"], // Fields to search in
-    threshold: 0.3, // Adjust for fuzziness (0 = exact match, 1 = very loose)
-  });
-
-  // Handle search input
-  const handleSearch = (e) => {
-    const searchQuery = e.target.value;
-    setQuery(searchQuery);
-    if (searchQuery.length > 0) {
-      const searchResults = fuse.search(searchQuery);
-      setResults(searchResults.map((result) => result.item));
-    } else {
-      setResults(diseases); // Show all diseases if query is empty
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
     }
+  
+    fetch(
+      `https://en.wikipedia.org/w/api.php?action=opensearch&search=${query}&limit=5&namespace=0&format=json&origin=*`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const filteredSuggestions = data[1].filter((item) =>
+          filterKeywords.some((keyword) => item.toLowerCase().includes(keyword))
+        );
+        setSuggestions(filteredSuggestions);
+      });
+  }, [query]);
+  
+
+  const handleSearch = (searchTerm = query) => {
+    if (searchTerm.trim() === "") return;
+  
+    setHasSearched(true);
+
+    fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${searchTerm}&utf8=&format=json&origin=*`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const filtered = data.query.search.filter((item) => {
+          const content = (item.title + item.snippet).toLowerCase();
+          // Apply the filter for pet-related keywords
+          return filterKeywords.some((keyword) => content.includes(keyword));
+        });
+  
+        // If no relevant results are found, provide a fallback message
+        if (filtered.length === 0) {
+          alert("No relevant pet-related results found.");
+        }
+  
+        setResults(filtered); // Update state with filtered results
+        setSuggestions([]); // Clear suggestions when search is made
+      });
+  };
+  
+  const handleSuggestionClick = (term) => {
+    setQuery(term);
+    handleSearch(term);
   };
 
   return (
@@ -77,66 +113,26 @@ export default function PawPedia() {
         flexDirection: "column",
       }}
     >
-      {/* Background Circles */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "230px",
-          height: "230px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-          transform: "translate(-30%, -30%)",
-        }}
-      ></div>
-      <div
-        style={{
-          position: "absolute",
-          top: "120px",
-          left: "180px",
-          width: "100px",
-          height: "100px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-          transform: "translate(40%, 40%)",
-        }}
-      ></div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: "150px",
-          right: "100px",
-          width: "80px",
-          height: "80px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: "300px",
-          right: "200px",
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          backgroundColor: colors.yellow,
-        }}
-      ></div>
+      {/* Yellow background circles */}
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            borderRadius: "50%",
+            backgroundColor: colors.yellow,
+            ...(i === 0 && { top: 0, left: 0, width: "230px", height: "230px", transform: "translate(-30%, -30%)" }),
+            ...(i === 1 && { top: "120px", left: "180px", width: "100px", height: "100px" }),
+            ...(i === 2 && { bottom: 0, right: 0, width: "300px", height: "300px", transform: "translate(40%, 40%)" }),
+            ...(i === 3 && { bottom: "150px", right: "100px", width: "80px", height: "80px" }),
+            ...(i === 4 && { bottom: "300px", right: "200px", width: "60px", height: "60px" }),
+          }}
+        ></div>
+      ))}
+
       <GuestNavBar />
-      {/* Main Content */}
+
+      {/* Main content */}
       <div
         style={{
           maxWidth: "1000px",
@@ -148,16 +144,7 @@ export default function PawPedia() {
           flexGrow: 1,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-        >
-          {/* Pets Image */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px" }}>
           <img
             src={pawpedia}
             alt="Pets lineup"
@@ -166,122 +153,161 @@ export default function PawPedia() {
               maxWidth: "470px",
               height: "auto",
               objectFit: "contain",
-              marginTop: "0px",
+              marginTop: "-30px",
               marginBottom: "-20px",
               display: "block",
             }}
           />
-          {/* Search Bar */}
+
+          {/* Search bar with autocomplete */}
           <div
             style={{
               display: "flex",
-              alignItems: "center",
+              flexDirection: "column",
               width: "100%",
               maxWidth: "500px",
-              border: "3px solid #042C3C",
-              borderRadius: "9999px",
-              backgroundColor: "white",
-              padding: "8px 16px",
+              position: "relative",
             }}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#9CA3AF"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: "8px" }}
-            >
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search conditions, diseases or illnesses..."
-              value={query}
-              onChange={handleSearch}
-              style={{
-                flexGrow: 1,
-                color: "rgba(0, 0, 0, 1)",
-                backgroundColor: "transparent",
-                outline: "none",
-                border: "none",
-                fontSize: "13px",
-              }}
-            />
-            <button
-              style={{
-                backgroundColor: colors.coral,
-                color: "white",
-                fontSize: "12px",
-                padding: "6px 15px",
-                borderRadius: "9999px",
-                border: "none",
-                cursor: "pointer",
-              }}
-              onClick={() => alert("AI search functionality can be added here!")}
-            >
-              Ask AI
-            </button>
-          </div>
-          {/* Search Results */}
-          {results.length > 0 && (
             <div
               style={{
-                marginTop: "20px",
-                width: "100%",
-                maxWidth: "300px",
+                display: "flex",
+                alignItems: "center",
+                border: "3px solid #042C3C",
+                borderRadius: "9999px",
                 backgroundColor: "white",
-                borderRadius: "10px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                padding: "10px",
+                padding: "8px 16px",
               }}
             >
-              {results.map((result, index) => (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#9CA3AF"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginRight: "8px" }}
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search pet conditions, diseases, or illnesses..."
+                value={query}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setQuery(val);
+                  if (val.length < 2) {
+                    setSuggestions([]);
+                    setResults([]); // Optional: clear results when query is too short
+                  }
+                }}
+                
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                style={{
+                  flexGrow: 1,
+                  color: "rgba(0, 0, 0, 1)",
+                  backgroundColor: "transparent",
+                  outline: "none",
+                  border: "none",
+                  fontSize: "13px",
+                }}
+              />
+              <button
+                style={{
+                  backgroundColor: colors.coral,
+                  color: "white",
+                  fontSize: "12px",
+                  padding: "6px 15px",
+                  borderRadius: "9999px",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleSearch()}
+              >
+                Search
+              </button>
+            </div>
+
+            {/* Autocomplete suggestions */}
+            {suggestions.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "110%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "white",
+                  border: "1px solid #ccc",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.1)",
+                  zIndex: 10,
+                }}
+              >
+                {suggestions.map((sugg, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSuggestionClick(sugg)}
+                    style={{
+                      padding: "10px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      color: colors.darkBlue,
+                      borderBottom: idx !== suggestions.length - 1 ? "1px solid #eee" : "none",
+                    }}
+                  >
+                    {sugg}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Results */}
+          <div style={{ marginTop: "20px", width: "100%", maxWidth: "600px" }}>
+            {results.length > 0 ? (
+              results.map((item, idx) => (
                 <div
-                  key={index}
+                  key={idx}
                   style={{
-                    padding: "10px",
-                    borderBottom:
-                      index < results.length - 1 ? "1px solid #e5e7eb" : "none",
+                    marginBottom: "20px",
+                    padding: "15px",
+                    border: "1px solid #ddd",
+                    borderRadius: "12px",
+                    backgroundColor: "#fff",
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: "16px", color: colors.darkBlue }}>
-                    {result.name}
-                  </h3>
-                  <p style={{ margin: "5px 0 0", fontSize: "14px", color: "#6b7280" }}>
-                    {result.animal} - {result.description}
-                  </p>
+                  <h3 style={{ margin: "0 0 5px 0", color: colors.darkBlue }}>{item.title}</h3>
+                  <p
+                    style={{ margin: 0, fontSize: "13px", color: "#333" }}
+                    dangerouslySetInnerHTML={{ __html: item.snippet + "..." }}
+                  />
+                  <a
+                    href={`https://en.wikipedia.org/?curid=${item.pageid}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: "12px", color: colors.coral, marginTop: "5px", display: "inline-block" }}
+                  >
+                    Read more on Wikipedia →
+                  </a>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+                hasSearched && results.length === 0 && (
+                  <p style={{ fontSize: "14px", color: "#666", marginTop: "20px" }}>
+                   
+                  </p>
+                )
+            )}
+          </div>
         </div>
       </div>
-      {/* Font imports */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
-            html, body {
-              margin: 0;
-              padding: 0;
-              height: 100%;
-              width: 100%;
-              overflow-x: hidden;
-            }
-            #root {
-              min-height: 100vh;
-              display: flex;
-              flex-direction: column;
-            }
-          `,
-        }}
-      />
+
+      <AIModal />
     </div>
   );
 }

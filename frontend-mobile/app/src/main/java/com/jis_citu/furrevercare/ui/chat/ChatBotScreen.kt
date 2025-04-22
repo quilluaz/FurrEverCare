@@ -1,49 +1,33 @@
 package com.jis_citu.furrevercare.ui.chat
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.Background
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
 import com.jis_citu.furrevercare.theme.PrimaryGreen
+import java.text.SimpleDateFormat
+import java.util.*
 
 data class ChatMessage(
     val id: String,
@@ -52,56 +36,86 @@ data class ChatMessage(
     val timestamp: String
 )
 
+val sessionStore = mutableStateMapOf<String, MutableList<ChatMessage>>()
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatBotScreen(navController: NavController) {
-    val messages = remember {
-        mutableStateListOf(
-            ChatMessage("1", "Hello! I'm FurFriends, your pet care assistant. How can I help you today?", false, "10:00 AM")
-        )
-    }
+fun ChatBotScreen(navController: NavController, sessionId: String) {
+    val messages = sessionStore.getOrPut(sessionId) { mutableStateListOf() }
 
     var messageText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
-    ) {
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "FurrEva",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigate(Routes.CHAT_LIST) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Chat Sessions"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Background)
+            )
+        },
+        containerColor = Background
+    ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            // Chat header
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "Chat Bot",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            // Chat messages
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp)
-            ) {
-                items(messages) { message ->
-                    ChatMessageItem(message)
-                    Spacer(modifier = Modifier.height(8.dp))
+            if (messages.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "How can I help you today?",
+                        style = MaterialTheme.typography.headlineMedium,
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = 8.dp)
+                ) {
+                    items(messages) { message ->
+                        AnimatedVisibility(visible = true) {
+                            ChatMessageItem(message)
+                        }
+                    }
                 }
             }
 
-            // Message input
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(Background)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -117,33 +131,35 @@ fun ChatBotScreen(navController: NavController) {
                 IconButton(
                     onClick = {
                         if (messageText.isNotBlank()) {
+                            val time = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date())
+
                             val userMessage = ChatMessage(
-                                id = (messages.size + 1).toString(),
+                                id = UUID.randomUUID().toString(),
                                 message = messageText,
                                 isFromUser = true,
-                                timestamp = "Just now"
+                                timestamp = time
                             )
                             messages.add(userMessage)
 
-                            // Simulate bot response
                             val botResponse = ChatMessage(
-                                id = (messages.size + 1).toString(),
-                                message = "I understand you're asking about ${messageText.take(20)}... Let me help with that.",
+                                id = UUID.randomUUID().toString(),
+                                message = "Thinking... Okay, about '${messageText.take(20)}'... Let me provide some info.",
                                 isFromUser = false,
-                                timestamp = "Just now"
+                                timestamp = time
                             )
                             messages.add(botResponse)
 
                             messageText = ""
                         }
                     },
+                    enabled = messageText.isNotBlank(),
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(PrimaryGreen)
+                        .background(if (messageText.isNotBlank()) PrimaryGreen else Color.Gray),
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        imageVector = Icons.AutoMirrored.Default.Send,
                         contentDescription = "Send",
                         tint = Color.White
                     )
@@ -157,40 +173,46 @@ fun ChatBotScreen(navController: NavController) {
 fun ChatMessageItem(message: ChatMessage) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isFromUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (message.isFromUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
         if (!message.isFromUser) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(PrimaryGreen),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "🐾",
-                    color = Color.White
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
-
             Spacer(modifier = Modifier.width(8.dp))
         }
 
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(
+                topStart = if (!message.isFromUser) 4.dp else 12.dp,
+                topEnd = if (message.isFromUser) 4.dp else 12.dp,
+                bottomStart = 12.dp,
+                bottomEnd = 12.dp
+            ),
             colors = CardDefaults.cardColors(
                 containerColor = if (message.isFromUser) PrimaryGreen else Color.White
             ),
-            modifier = Modifier.fillMaxWidth(0.8f)
+            modifier = Modifier.widthIn(max = 300.dp)
         ) {
             Column(
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = message.message,
                     color = if (message.isFromUser) Color.White else Color.Black
                 )
-
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = message.timestamp,
                     style = MaterialTheme.typography.bodySmall,
@@ -202,15 +224,17 @@ fun ChatMessageItem(message: ChatMessage) {
 
         if (message.isFromUser) {
             Spacer(modifier = Modifier.width(8.dp))
-
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(Color.Gray.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "👤")
+                Text(
+                    text = "👤",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
     }
@@ -220,6 +244,6 @@ fun ChatMessageItem(message: ChatMessage) {
 @Composable
 fun ChatBotScreenPreview() {
     FurrEverCareTheme {
-        ChatBotScreen(rememberNavController())
+        ChatBotScreen(rememberNavController(), sessionId = "preview_session")
     }
 }

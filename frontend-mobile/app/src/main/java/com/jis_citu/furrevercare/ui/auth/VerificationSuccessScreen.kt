@@ -50,8 +50,8 @@ fun VerificationSuccessScreen(navController: NavController) {
                 painter = painterResource(id = R.drawable.verification_success),
                 contentDescription = "Verification Success",
                 modifier = Modifier
-                    .size(200.dp)
-                    .padding(bottom = 32.dp),
+                    .size(300.dp)
+                    .padding(bottom = 24.dp),
                 contentScale = ContentScale.Fit
             )
 

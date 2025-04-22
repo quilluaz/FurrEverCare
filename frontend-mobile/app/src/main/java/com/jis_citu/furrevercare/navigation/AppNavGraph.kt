@@ -1,5 +1,6 @@
 package com.jis_citu.furrevercare.navigation
 
+import androidx.compose.animation.*
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -7,21 +8,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.jis_citu.furrevercare.ui.auth.LoginScreen
-import com.jis_citu.furrevercare.ui.auth.RegisterScreen
-import com.jis_citu.furrevercare.ui.auth.VerificationSuccessScreen
-import com.jis_citu.furrevercare.ui.auth.WelcomeAuthScreen
-import com.jis_citu.furrevercare.ui.chat.ChatBotScreen
-import com.jis_citu.furrevercare.ui.chat.ChatDetailScreen
-import com.jis_citu.furrevercare.ui.chat.ChatMessagesScreen
-import com.jis_citu.furrevercare.ui.forum.ForumCreatePostScreen
-import com.jis_citu.furrevercare.ui.forum.ForumListScreen
-import com.jis_citu.furrevercare.ui.forum.ForumPostDetailScreen
-import com.jis_citu.furrevercare.ui.home.HomeScreen
-import com.jis_citu.furrevercare.ui.home.MainScreen
-import com.jis_citu.furrevercare.ui.onboarding.OnboardingScreen
-import com.jis_citu.furrevercare.ui.onboarding.SplashScreen
+import com.jis_citu.furrevercare.ui.auth.*
+import com.jis_citu.furrevercare.ui.chat.*
+import com.jis_citu.furrevercare.ui.article.ArticleScreen
+import com.jis_citu.furrevercare.ui.article.SearchScreen
+import com.jis_citu.furrevercare.ui.home.*
+import com.jis_citu.furrevercare.ui.notifications.NotificationsScreen
+import com.jis_citu.furrevercare.ui.onboarding.*
+import com.jis_citu.furrevercare.ui.pet.*
 import com.jis_citu.furrevercare.ui.profile.ProfileScreen
+import com.jis_citu.furrevercare.ui.settings.*
 
 @Composable
 fun AppNavGraph(
@@ -32,7 +28,7 @@ fun AppNavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
-        // Onboarding flow
+        // Onboarding
         composable(Routes.SPLASH) {
             SplashScreen(navController = navController)
         }
@@ -40,7 +36,7 @@ fun AppNavGraph(
             OnboardingScreen(navController = navController)
         }
 
-        // Auth flow
+        // Auth
         composable(Routes.WELCOME_AUTH) {
             WelcomeAuthScreen(navController = navController)
         }
@@ -50,11 +46,20 @@ fun AppNavGraph(
         composable(Routes.REGISTER) {
             RegisterScreen(navController = navController)
         }
+        composable(Routes.FORGOT_PASSWORD_EMAIL) {
+            ForgotPasswordEmailScreen(navController = navController)
+        }
+        composable(Routes.FORGOT_PASSWORD_VERIFICATION) {
+            ForgotPasswordVerificationScreen(navController = navController)
+        }
+        composable(Routes.FORGOT_PASSWORD_NEW_PASSWORD) {
+            ForgotPasswordNewPasswordScreen(navController = navController)
+        }
         composable(Routes.VERIFICATION_SUCCESS) {
             VerificationSuccessScreen(navController = navController)
         }
 
-        // Main flow with bottom navigation
+        // Main
         composable(Routes.MAIN) {
             MainScreen(navController = navController)
         }
@@ -64,43 +69,84 @@ fun AppNavGraph(
             HomeScreen(navController = navController)
         }
 
-        // Chat
-        composable(Routes.CHAT_BOT) {
-            ChatBotScreen(navController = navController)
-        }
-        composable(Routes.CHAT_MESSAGES) {
-            ChatMessagesScreen(navController = navController)
-        }
-        composable(
-            route = "${Routes.CHAT_DETAIL}/{chatId}",
-            arguments = listOf(navArgument("chatId") { type = NavType.StringType })
-        ) {
-            ChatDetailScreen(
-                navController = navController,
-                chatId = it.arguments?.getString("chatId") ?: ""
-            )
+        // Notifications
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(navController = navController)
         }
 
-        // Forum
-        composable(Routes.FORUM_LIST) {
-            ForumListScreen(navController = navController)
+        // Chat
+        composable(
+            route = "${Routes.CHAT_BOT}?session={session}",
+            arguments = listOf(
+                navArgument("session") {
+                    type = NavType.StringType
+                    defaultValue = "default_session"
+                    nullable = true
+                }
+            ),
+            enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
+            exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) },
+            popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) },
+            popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) }
+        ) {
+            val sessionId = it.arguments?.getString("session") ?: "default_session"
+            ChatBotScreen(navController = navController, sessionId = sessionId)
+        }
+        composable(Routes.CHAT_LIST) {
+            ChatListScreen(navController = navController)
+        }
+
+        // Articles
+        composable(Routes.ARTICLE_SEARCH) {
+            SearchScreen(navController = navController)
         }
         composable(
-            route = "${Routes.FORUM_POST_DETAIL}/{postId}",
-            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            route = "${Routes.ARTICLE_DETAIL}/{articleId}",
+            arguments = listOf(navArgument("articleId") { type = NavType.StringType })
         ) {
-            ForumPostDetailScreen(
+            ArticleScreen(
                 navController = navController,
-                postId = it.arguments?.getString("postId") ?: ""
+                articleId = it.arguments?.getString("articleId") ?: ""
             )
-        }
-        composable(Routes.FORUM_CREATE_POST) {
-            ForumCreatePostScreen(navController = navController)
         }
 
         // Profile
         composable(Routes.PROFILE) {
             ProfileScreen(navController = navController)
+        }
+
+        // Settings
+        composable(Routes.SETTINGS) {
+            SettingsScreen(navController = navController)
+        }
+        composable(Routes.FAQS) {
+            FAQsScreen(navController = navController)
+        }
+        composable(Routes.PRIVACY_POLICY) {
+            PrivacyPolicyScreen(navController = navController)
+        }
+        composable(Routes.DATA_USAGE) {
+            DataUsageScreen(navController = navController)
+        }
+        composable(Routes.CONTACT_US) {
+            ContactUsScreen(navController = navController)
+        }
+
+        // Pet
+        composable(Routes.PET_LIST) {
+            PetListScreen(navController = navController)
+        }
+        composable(
+            route = "${Routes.PET_DETAILS}/{petId}",
+            arguments = listOf(navArgument("petId") { type = NavType.StringType })
+        ) {
+            PetDetailsScreen(
+                navController = navController,
+                petId = it.arguments?.getString("petId") ?: ""
+            )
+        }
+        composable(Routes.ADD_PET) {
+            AddPetScreen(navController = navController)
         }
     }
 }

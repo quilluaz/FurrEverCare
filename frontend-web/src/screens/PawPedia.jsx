@@ -67,6 +67,24 @@ export default function PawPedia() {
         setSuggestions(filteredSuggestions);
       });
   }, [query]);
+
+   // Inject floating animation keyframes
+   useEffect(() => {
+    const styleTag = document.createElement("style");
+    styleTag.innerHTML = `
+      @keyframes float {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(-10px, 15px); }
+        50% { transform: translate(10px, -10px); }
+        75% { transform: translate(-15px, -5px); }
+        100% { transform: translate(0, 0); }
+      }
+    `;
+    document.head.appendChild(styleTag);
+    return () => {
+      document.head.removeChild(styleTag);
+    };
+  }, []);
   
 
   const handleSearch = (searchTerm = query) => {
@@ -130,6 +148,7 @@ export default function PawPedia() {
         ></div>
       ))}
 
+      
       <GuestNavBar />
 
       {/* Main content */}

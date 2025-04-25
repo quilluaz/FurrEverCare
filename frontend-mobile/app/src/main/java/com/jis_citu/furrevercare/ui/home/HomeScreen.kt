@@ -2,6 +2,7 @@ package com.jis_citu.furrevercare.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,16 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.jis_citu.furrevercare.R
+import com.jis_citu.furrevercare.model.Pet
+import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.Background
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
 import com.jis_citu.furrevercare.theme.PrimaryGreen
-
-data class Pet(
-    val id: String,
-    val name: String,
-    val species: String,
-    val imageRes: Int
-)
 
 data class Reminder(
     val id: String,
@@ -60,10 +56,32 @@ data class Reminder(
 @Composable
 fun HomeScreen(navController: NavController) {
     // Sample data
-    val pets = listOf(
-        Pet("1", "Max", "Dog", R.drawable.dog),
-        Pet("2", "Whiskers", "Cat", R.drawable.cat),
-    )
+    val pets = remember {
+        listOf(
+            Pet(
+                id = "1",
+                name = "Max",
+                species = "Dog",
+                breed = "Golden Retriever",
+                age = 3,
+                gender = "Male",
+                weight = 30.5,
+                imageRes = R.drawable.dog,
+                allergies = listOf("Chicken", "Peanuts")
+            ),
+            Pet(
+                id = "2",
+                name = "Whiskers",
+                species = "Cat",
+                breed = "Siamese",
+                age = 2,
+                gender = "Female",
+                weight = 4.2,
+                imageRes = R.drawable.cat,
+                allergies = listOf("Dairy")
+            )
+        )
+    }
 
     val reminders = listOf(
         Reminder("1", "Vaccination", "Today, 2:00 PM", R.drawable.logo_icon_colored),
@@ -81,28 +99,40 @@ fun HomeScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             item {
-                HomeHeader()
+                HomeHeader(navController)
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
             item {
-                Text(
-                    text = "Your Pets",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Your Pets",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    Text(
+                        text = "View All",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PrimaryGreen,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable {
+                            navController.navigate(Routes.PET_LIST)
+                        }
+                    )
+                }
 
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.padding(vertical = 8.dp)
                 ) {
                     items(pets) { pet ->
-                        PetItem(pet)
-                    }
-
-                    item {
-                        AddPetItem()
+                        PetItem(pet, navController)
                     }
                 }
 
@@ -124,27 +154,12 @@ fun HomeScreen(navController: NavController) {
                 ReminderItem(reminder)
                 Spacer(modifier = Modifier.height(8.dp))
             }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Recent Forum Posts",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-
-                ForumPostPreview()
-
-                Spacer(modifier = Modifier.height(80.dp)) // Bottom padding for navigation bar
-            }
         }
     }
 }
 
 @Composable
-fun HomeHeader() {
+fun HomeHeader(navController: NavController) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -156,14 +171,14 @@ fun HomeHeader() {
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = "Pet Parent",
+                text = "John Doe",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
         }
 
         IconButton(
-            onClick = { /* Handle notification click */ },
+            onClick = { navController.navigate(Routes.NOTIFICATIONS) },
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
@@ -178,10 +193,12 @@ fun HomeHeader() {
 }
 
 @Composable
-fun PetItem(pet: Pet) {
+fun PetItem(pet: Pet, navController: NavController) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(100.dp)
+        modifier = Modifier
+            .width(100.dp)
+            .clickable { navController.navigate("${Routes.PET_DETAILS}/${pet.id}") }
     ) {
         Image(
             painter = painterResource(id = pet.imageRes),
@@ -204,37 +221,6 @@ fun PetItem(pet: Pet) {
             text = pet.species,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-    }
-}
-
-@Composable
-fun AddPetItem() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(100.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(PrimaryGreen.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Pet",
-                tint = PrimaryGreen,
-                modifier = Modifier.size(32.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Add Pet",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium
         )
     }
 }
@@ -271,78 +257,6 @@ fun ReminderItem(reminder: Reminder) {
                     text = reminder.time,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ForumPostPreview() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_icontext_colored),
-                    contentDescription = "User Avatar",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        text = "Jane Smith",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = "2 hours ago",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "My cat has been scratching furniture a lot lately. Any advice on how to stop this behavior?",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "12 comments",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-
-                Text(
-                    text = "View Post",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = PrimaryGreen,
-                    fontWeight = FontWeight.Bold
                 )
             }
         }

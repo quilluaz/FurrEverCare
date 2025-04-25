@@ -58,7 +58,7 @@ fun Splash(alpha: Float) {
     ) {
         Image(
             modifier = Modifier
-                .size(200.dp)
+                .size(325.dp)
                 .alpha(alpha),
             painter = painterResource(id = R.drawable.logo_icontext_colored),
             contentDescription = "FurrEverCare Logo",

@@ -10,10 +10,24 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+// Theme preference manager
+object ThemePreferenceManager {
+    private val _isDarkTheme = MutableStateFlow<Boolean?>(null)
+    val isDarkTheme: StateFlow<Boolean?> = _isDarkTheme
+
+    fun setDarkTheme(isDark: Boolean?) {
+        _isDarkTheme.value = isDark
+    }
+}
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryGreen,
@@ -36,15 +50,23 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun FurrEverCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val themePreference by ThemePreferenceManager.isDarkTheme.collectAsState()
+
+    val useDarkTheme = when (themePreference) {
+        true -> true
+        false -> false
+        else -> darkTheme
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
+        useDarkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
@@ -52,8 +74,10 @@ fun FurrEverCareTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                window.statusBarColor = colorScheme.background.toArgb()
+            }
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !useDarkTheme
         }
     }
 

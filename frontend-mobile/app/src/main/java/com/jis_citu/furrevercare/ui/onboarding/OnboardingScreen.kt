@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,8 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
@@ -139,14 +136,14 @@ fun OnboardingPage(page: OnboardingPage) {
             painter = painterResource(id = page.image),
             contentDescription = "Onboarding Image",
             modifier = Modifier
-                .size(250.dp)
+                .size(300.dp)
                 .padding(bottom = 16.dp),
             contentScale = ContentScale.Fit
         )
 
         Text(
             text = page.title,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -154,7 +151,7 @@ fun OnboardingPage(page: OnboardingPage) {
 
         Text(
             text = page.description,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp)
         )

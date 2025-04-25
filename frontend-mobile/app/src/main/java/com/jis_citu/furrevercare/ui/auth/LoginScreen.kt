@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -70,7 +70,7 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.align(Alignment.Start)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back"
                 )
             }
@@ -86,17 +86,9 @@ fun LoginScreen(navController: NavController) {
                     painter = painterResource(id = R.drawable.logo_icontext_colored),
                     contentDescription = "Login Image",
                     modifier = Modifier
-                        .size(150.dp)
-                        .padding(bottom = 16.dp),
+                        .size(250.dp)
+                        .padding(bottom = 8.dp),
                     contentScale = ContentScale.Fit
-                )
-
-                Text(
-                    text = "Let's help your pets today",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 24.dp)
                 )
 
                 OutlinedTextField(
@@ -133,7 +125,7 @@ fun LoginScreen(navController: NavController) {
                     modifier = Modifier
                         .align(Alignment.End)
                         .padding(end = 32.dp, top = 4.dp, bottom = 16.dp)
-                        .clickable { /* Handle forgot password */ }
+                        .clickable { navController.navigate(Routes.FORGOT_PASSWORD_EMAIL) }
                 )
 
                 Button(

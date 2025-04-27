@@ -4,8 +4,11 @@ import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import cit.edu.furrevercare.entity.Pet;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -14,11 +17,18 @@ public class PetService {
     private static final String COLLECTION_NAME = "users";
     private final Firestore firestore = FirestoreClient.getFirestore();
 
-    public String addPetToUser(String userID, Pet pet) throws ExecutionException, InterruptedException {
+    public String addPetToUser(String userID, Pet pet, MultipartFile image) throws ExecutionException, InterruptedException, IOException {
         CollectionReference petsCollection = firestore.collection(COLLECTION_NAME).document(userID).collection("pets");
         DocumentReference petDoc = petsCollection.document();
         pet.setPetID(petDoc.getId());
         pet.setOwnerID(userID);
+
+        if (image != null && !image.isEmpty()) {
+            byte[] imageBytes = image.getBytes();
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            pet.setImageBase64(base64Image);
+        }
+
         petDoc.set(pet).get();
         return "Pet added successfully with ID: " + pet.getPetID();
     }
@@ -29,7 +39,11 @@ public class PetService {
         List<QueryDocumentSnapshot> documents = petsCollection.get().get().getDocuments();
 
         for (QueryDocumentSnapshot document : documents) {
-            pets.add(document.toObject(Pet.class));
+            Pet pet = document.toObject(Pet.class);
+            if (pet.getImageBase64() != null && pet.getImageBase64().isEmpty()) {
+                pet.setImageBase64(null);
+            }
+            pets.add(pet);
         }
         return pets;
     }
@@ -38,11 +52,25 @@ public class PetService {
         DocumentReference petDoc = firestore.collection(COLLECTION_NAME).document(userID).collection("pets").document(petID);
         DocumentSnapshot document = petDoc.get().get();
 
-        return document.exists() ? document.toObject(Pet.class) : null;
+        if (document.exists()) {
+            Pet pet = document.toObject(Pet.class);
+            if (pet.getImageBase64() != null && pet.getImageBase64().isEmpty()) {
+                pet.setImageBase64(null);
+            }
+            return pet;
+        }
+        return null;
     }
 
-    public String updatePet(String userID, String petID, Pet updatedPet) throws ExecutionException, InterruptedException {
+    public String updatePet(String userID, String petID, Pet updatedPet, MultipartFile image) throws ExecutionException, InterruptedException, IOException {
         DocumentReference petDoc = firestore.collection(COLLECTION_NAME).document(userID).collection("pets").document(petID);
+
+        if (image != null && !image.isEmpty()) {
+            byte[] imageBytes = image.getBytes();
+            String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+            updatedPet.setImageBase64(base64Image);
+        }
+
         petDoc.set(updatedPet).get();
         return "Pet updated successfully!";
     }

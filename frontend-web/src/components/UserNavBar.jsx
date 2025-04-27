@@ -1,15 +1,27 @@
 import logo from "../assets/logo.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import AuthService from "../config/AuthService";
+import { useEffect, useState } from "react";
 
 function UserNavBar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const user = AuthService.getUser();
+    if (user && user.name) {
+      setUserName(user.name);
+    }
+  }, []);
 
   const handleProfileClick = () => {
     navigate("/profile");
   };
 
   const isActive = (path) => location.pathname === path;
+
+  const firstLetter = userName ? userName.charAt(0).toUpperCase() : "";
 
   return (
     <nav
@@ -47,8 +59,8 @@ function UserNavBar() {
               style={{
                 color: isActive(to) ? "#EA6C7B" : "#042C3C",
                 fontFamily: "'Baloo'",
-                display: "inline-flex", // Prevent multi-word stacking
-                alignItems: "center",  // Align items horizontally
+                display: "inline-flex",
+                alignItems: "center",
               }}
             >
               {label}
@@ -75,9 +87,11 @@ function UserNavBar() {
               color: "white",
               cursor: "pointer",
               fontFamily: "'Baloo'",
+              fontSize: "18px",
+              fontWeight: "bold",
             }}
           >
-            <i className="fas fa-user-circle text-lg"></i>
+            {firstLetter || "U"}
           </button>
         </div>
       </div>

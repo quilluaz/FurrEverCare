@@ -6,6 +6,9 @@ import AboutUsDog2 from "../assets/AboutUsDog2.png"
 import SignUpModal from "../components/SignUpModal"
 import { useNavigate } from "react-router-dom"
 import Footer from "../components/Footer"
+import MobileDev from "../assets/MobileDev.jpg"
+import BackEndDev from "../assets/BackEndDev.png"
+import WebDev from "../assets/WebDev.jpg"
 
 export default function AboutUs() {
   const colors = {
@@ -47,19 +50,19 @@ export default function AboutUs() {
       name: "Jan Isaac S. Quilo",
       role: "Mobile Developer",
       description: "Bringing the FurrEverCare experience to your pocket with our intuitive mobile applications.",
-      image: "",
+      image: MobileDev
     },
     {
       name: "Jeric Kiel B. Melocoton",
       role: "Backend Developer",
       description: "Architecting robust systems that power our platform with security and performance in mind.",
-      image: "",
+      image: BackEndDev
     },
     {
       name: "Selina Mae V. Genosolango",
       role: "Web Developer",
-      description: "Passionate about creating beautiful, responsive user interfaces that delight our customers.",
-      image: "",
+      description: "Passionate about creating beautiful, responsive user interfaces that delight our users.",
+      image: WebDev
     },
   ]
 
@@ -282,6 +285,7 @@ export default function AboutUs() {
           backgroundColor: colors.cream,
           position: "relative",
           padding: "80px 0",
+          marginTop: "-120px"
         }}
       >
         <Container maxWidth="lg">

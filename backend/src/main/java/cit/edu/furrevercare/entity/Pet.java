@@ -4,7 +4,7 @@ import java.util.List;
 
 public class Pet {
     private String petID;
-    private String ownerID; // Maps to ERD's "userID" (FK)
+    private String ownerID;
     private String name;
     private String breed;
     private String gender;
@@ -12,12 +12,13 @@ public class Pet {
     private double weight;
     private String species;
     private List<String> allergies;
+    private String imageBase64 = null;
 
     public Pet() {
     }
 
     public Pet(String petID, String ownerID, String name, String breed, String gender,
-               int age, double weight, String species, List<String> allergies) {
+               int age, double weight, String species, List<String> allergies, String imageBase64) {
         this.petID = petID;
         this.ownerID = ownerID;
         this.name = name;
@@ -27,8 +28,8 @@ public class Pet {
         this.weight = weight;
         this.species = species;
         this.allergies = allergies;
+        this.imageBase64 = imageBase64;
     }
-
 
     public String getGender() {
         return gender;
@@ -100,5 +101,13 @@ public class Pet {
 
     public void setAllergies(List<String> allergies) {
         this.allergies = allergies;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 }

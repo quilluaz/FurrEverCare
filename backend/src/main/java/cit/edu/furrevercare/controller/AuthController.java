@@ -79,7 +79,8 @@ public class AuthController {
                         name != null ? name : "Google User",
                         email,
                         "", // No password for Google users
-                        ""  // Empty phone for Google users
+                        ""
+                          // Empty phone for Google users
                 );
                 userService.saveUser(user);
             }

@@ -1,3 +1,4 @@
+  
 import { useState, useEffect, useRef } from "react";
 import { X, Send, Bot, User } from "lucide-react";
 
@@ -59,10 +60,10 @@ export default function AIModal() {
     };
   }, [isOpen]);
 
-  // Generate response using Hugging Face Inference API
+  // Generate response using Hugging Face Inference API with Qwen-7B-Chat
   const handleSend = async () => {
     if (!input.trim()) return;
-    
+
     // Add user message to chat
     const userMessage = { sender: "user", text: input };
     setMessages(prev => [...prev, userMessage]);
@@ -70,15 +71,12 @@ export default function AIModal() {
     setIsLoading(true);
 
     try {
-      // Create a prompt with context for the model
-      const prompt = `You are a veterinary assistant AI helping a pet owner.
-      The pet owner says: "${input}"
-      
-      Provide a helpful response with information about what might be happening and when they should see a vet:`;
-      
+      // Create a concise prompt for Qwen-7B-Chat
+      const prompt = `Veterinary assistant AI: Respond to "${input}". Suggest causes, when to see a vet, and note to consult a veterinarian.`;
+
       // Call the Hugging Face Inference API
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+        "https://api-inference.huggingface.co/models/Qwen/Qwen-7B-Chat",
         {
           method: "POST",
           headers: {
@@ -88,8 +86,9 @@ export default function AIModal() {
           body: JSON.stringify({
             inputs: prompt,
             parameters: {
-              max_new_tokens: 150,
+              max_new_tokens: 150, // Reduced for concise responses
               temperature: 0.7,
+              top_p: 0.9,
               return_full_text: false
             }
           }),
@@ -98,12 +97,11 @@ export default function AIModal() {
 
       const result = await response.json();
       let aiResponse = "";
-      
+
       // Handle the response
       if (Array.isArray(result) && result.length > 0 && result[0].generated_text) {
         aiResponse = result[0].generated_text.trim();
       } else if (result.error) {
-        // Model might be loading
         if (result.error.includes("loading")) {
           aiResponse = "The AI model is still loading. Please try again in a moment.";
         } else {
@@ -116,8 +114,8 @@ export default function AIModal() {
       // Add AI response to chat
       setMessages(prev => [...prev, { sender: "ai", text: aiResponse }]);
     } catch (error) {
-      console.error("Error generating response:", error);
-      const errorMessage = "I'm having trouble processing your request. For any concerning pet symptoms, it's best to consult with your veterinarian for proper diagnosis and treatment.";
+      console.error("Error generating response:", error.message);
+      const errorMessage = `I'm having trouble processing your request: ${error.message}. For any concerning pet symptoms, it's best to consult with your veterinarian for proper diagnosis and treatment.`;
       setMessages(prev => [...prev, { sender: "ai", text: errorMessage }]);
     }
 
@@ -128,10 +126,10 @@ export default function AIModal() {
     <>
       {!isOpen && (
         <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-5 left-5 h-12 w-12 rounded-full bg-[#042C3C] hover:bg-[#EA6C7B] border border-white text-white flex items-center justify-center shadow-lg transition-all"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-5 left-5 h-12 w-12 rounded-full bg-[#042C3C] hover:bg-[#EA6C7B] border border-white text-white flex items-center justify-center shadow-lg transition-all"
         >
-        <Bot className="h-6 w-6" />
+          <Bot className="h-6 w-6" />
         </button>
       )}
 
@@ -139,10 +137,9 @@ export default function AIModal() {
 
       {isOpen && (
         <div
-        ref={modalRef}
-        className="fixed z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg rounded-b-2xl shadow-lg flex flex-col max-h-[80vh]"
+          ref={modalRef}
+          className="fixed z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg rounded-b-2xl shadow-lg flex flex-col max-h-[80vh]"
         >
-
           {/* Header */}
           <div className="flex justify-between items-center p-4 border-b">
             <div className="flex items-center gap-3">
@@ -166,7 +163,7 @@ export default function AIModal() {
           <div 
             ref={chatContainerRef}
             className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 rounded-b-2xl"
-            >   
+          >   
             {messages.map((message, index) => (
               <div 
                 key={index} 
@@ -215,27 +212,26 @@ export default function AIModal() {
               This AI assistant provides general information only. Always consult your veterinarian for specific medical advice.
             </p>
             <div className="relative flex items-center">
-            <input
-            type="text"
-            placeholder="Type your message..."
-            className="w-full px-4 py-2 pr-12 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8A973F] focus:border-transparent placeholder-gray-400 text-[#042C3C]"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-                }
-            }}
-            />
-            <button
-            className="absolute right-1 h-8 w-8 flex items-center justify-center rounded-full bg-[#8A973F] hover:bg-[#73863B] text-white"
-            onClick={handleSend}
-            disabled={isLoading || !input.trim()}
-            >
-            <Send className="h-4 w-4" />
-            </button>
-
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="w-full px-4 py-2 pr-12 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8A973F] focus:border-transparent placeholder-gray-400 text-[#042C3C]"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+              />
+              <button
+                className="absolute right-1 h-8 w-8 flex items-center justify-center rounded-full bg-[#8A973F] hover:bg-[#73863B] text-white"
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -17,18 +18,17 @@ public class PetController {
     @Autowired
     private PetService petService;
 
-    @PostMapping
+    @PostMapping(consumes = {"multipart/form-data"})
     public String addPet(
         @PathVariable String userID,
-        @RequestBody Pet pet
+        @RequestPart("pet") Pet pet,
+        @RequestPart(value = "image", required = false) MultipartFile image
     ) throws Exception {
-        // The JwtFilter already validated the token and set authentication
-        // Just check if the authenticated user matches the requested userID
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.getName().equals(userID)) {
             throw new SecurityException("Unauthorized");
         }
-        return petService.addPetToUser(userID, pet);
+        return petService.addPetToUser(userID, pet, image);
     }
 
     @GetMapping
@@ -41,15 +41,26 @@ public class PetController {
         return petService.getPetById(userID, petID);
     }
 
-    @PutMapping("/{petID}")
-    public String updatePet(@PathVariable String userID, @PathVariable String petID, @RequestBody Pet updatedPet) throws ExecutionException, InterruptedException {
-        return petService.updatePet(userID, petID, updatedPet);
+    @PutMapping(value = "/{petID}", consumes = {"multipart/form-data"})
+    public String updatePet(
+        @PathVariable String userID,
+        @PathVariable String petID,
+        @RequestPart("pet") Pet pet,
+        @RequestPart(value = "image", required = false) MultipartFile image
+    ) throws Exception {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.getName().equals(userID)) {
+            throw new SecurityException("Unauthorized");
+        }
+        return petService.updatePet(userID, petID, pet, image);
     }
 
     @DeleteMapping("/{petID}")
     public String deletePet(@PathVariable String userID, @PathVariable String petID) throws ExecutionException, InterruptedException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.getName().equals(userID)) {
+            throw new SecurityException("Unauthorized");
+        }
         return petService.deletePet(userID, petID);
     }
-
-   
 }

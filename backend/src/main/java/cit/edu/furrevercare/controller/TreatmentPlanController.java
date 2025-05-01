@@ -54,7 +54,7 @@ public class TreatmentPlanController {
          }
 
          // 3. Verify plan ownership if planID is provided (Assuming TreatmentPlanService has this method)
-         if (planID != null) {
+        /**  if (planID != null) {
              try {
                  treatmentPlanService.verifyPlanOwnership(petID, planID);
                  System.out.println("DEBUG - TreatmentPlanController - Plan ownership verified for planID: " + planID);
@@ -69,7 +69,7 @@ public class TreatmentPlanController {
 
          System.out.println("DEBUG - TreatmentPlanController - Authorization successful for userID: " + userID + ", petID: " + petID + (planID != null ? ", planID: " + planID : ""));
     }
-
+**/
 
     @PostMapping("/add")
     public ResponseEntity<String> addTreatmentPlan(@PathVariable String userID, @PathVariable String petID, @RequestBody TreatmentPlan plan) {

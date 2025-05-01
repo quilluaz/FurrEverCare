@@ -49,7 +49,7 @@ function UserNavBar() {
           {[
             { to: "/home-pawpedia", label: "PawPedia" },
             { to: "/mypets", label: "My Pets" },
-            { to: "/tracker", label: "Treatment Tracker" },
+            { to: "/treat", label: "Treatment Tracker" },
             { to: "/wellness-timeline", label: "Wellness Timeline" },
           ].map(({ to, label }) => (
             <Link

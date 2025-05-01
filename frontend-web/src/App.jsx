@@ -4,7 +4,6 @@ import PawPedia from "./screens/PawPedia";
 import AboutUs from "./screens/AboutUs";
 import TreatmentTracker from "./screens/TreatmentTracker";
 import LogInModal from "./components/LogInModal";
-import SignUpModal from "./components/SignUpModal";
 import WellnessTimeline from "./screens/WellnessTimeline";
 import UserNavBar from "./components/UserNavBar";
 import SignUpPage from "./screens/SignUpPage";

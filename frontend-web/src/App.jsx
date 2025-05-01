@@ -4,7 +4,6 @@ import PawPedia from "./screens/PawPedia";
 import AboutUs from "./screens/AboutUs";
 import TreatmentTracker from "./screens/TreatmentTracker";
 import LogInModal from "./components/LogInModal";
-import SignUpModal from "./components/SignUpModal";
 import WellnessTimeline from "./screens/WellnessTimeline";
 import UserNavBar from "./components/UserNavBar";
 import SignUpPage from "./screens/SignUpPage";
@@ -12,13 +11,12 @@ import PetProfiles from "./screens/PetProfiles";
 import UserPawPedia from "./screens/UserPawPedia";
 import UserProfile from "./screens/UserProfile";
 import TreatmentPlanPage from "./screens/TreatmentPlanPage"; // Import the new page
-import AuthService from './config/AuthService';
 import TreatmentPlans from "./screens/TreatmentPlans";
 
 import React from "react";
 
 
-
+//thi is comment is just for deployment purposes.g
 const colors = {
   yellow: "#F0B542",
   darkBlue: "#042C3C",

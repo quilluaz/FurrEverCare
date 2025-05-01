@@ -2,7 +2,7 @@ import axios from 'axios';
 import React from "react";
 import { auth, provider, signInWithPopup } from '../config/firebase-config';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://furrevercare-deploy-8.onrender.com/api';
 
 let requestInterceptor = null;
 

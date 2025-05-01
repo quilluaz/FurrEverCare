@@ -11,7 +11,10 @@ import SignUpPage from "./screens/SignUpPage";
 import PetProfiles from "./screens/PetProfiles";
 import UserPawPedia from "./screens/UserPawPedia";
 import UserProfile from "./screens/UserProfile";
+import TreatmentPlanPage from "./screens/TreatmentPlanPage"; // Import the new page
 import AuthService from './config/AuthService';
+import TreatmentPlans from "./screens/TreatmentPlans";
+
 import React from "react";
 
 
@@ -24,7 +27,6 @@ const colors = {
 };
 
 function App() {
-    AuthService.init();
   return (
     <Router>
       <div style={{ overflowX: 'hidden' }}> {/* Prevent horizontal scrolling */}
@@ -40,6 +42,10 @@ function App() {
           <Route path="/mypets" element={<PetProfiles />} />
           <Route path="/home-pawpedia" element={<UserPawPedia />} />
           <Route path="/profile" element={<UserProfile />} />
+          {/* Add route for Treatment Plan Page, accepting userId and petId */}
+          <Route path="treatment-plans" element={<TreatmentPlanPage />} />
+          <Route path="treat" element={<TreatmentPlans/>} />
+
         </Routes>
       </div>
     </Router>

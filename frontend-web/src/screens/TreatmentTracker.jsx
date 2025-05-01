@@ -3,7 +3,6 @@ import { Plus, Clock, Bell, Calendar, Activity, Check, X, AlertCircle } from "lu
 import DailyTaskForm from "../components/DailyTaskForm";
 import UserNavBar from "../components/UserNavBar";
 import AddMedicationModal from "../components/AddMedicationModal";
-import LogTreatmentModal from "../components/LogTreatmentModal";
 import UpdateProgressModal from "../components/UpdateProgressModal";
 
 export default function TreatmentTracker() {

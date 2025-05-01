@@ -87,4 +87,29 @@ public class TreatmentPlanService {
          planDoc.delete().get();
         return "Treatment plan deleted successfully!";
     }
+
+    // Method to verify if the pet belongs to the user
+    public void verifyPetOwnership(String userID, String petID) throws ExecutionException, InterruptedException {
+        DocumentReference petDoc = firestore.collection(USERS_COLLECTION).document(userID)
+                .collection(PETS_COLLECTION).document(petID);
+        DocumentSnapshot document = petDoc.get().get();
+        if (!document.exists()) {
+            throw new IllegalArgumentException("Pet with ID " + petID + " not found for user " + userID);
+        }
+        // Optionally, you could add more checks here if needed
+    }
+
+    // Method to verify if the plan belongs to the pet (implicitly assumes user ownership is checked elsewhere)
+    public void verifyPlanOwnership(String userID, String petID, String planID) throws ExecutionException, InterruptedException {
+        DocumentReference planDoc = getPlansCollection(userID, petID).document(planID);
+        DocumentSnapshot document = planDoc.get().get();
+        if (!document.exists()) {
+            throw new IllegalArgumentException("Treatment plan with ID " + planID + " not found for pet " + petID);
+        }
+        // Optionally, check if the plan's petID matches the provided petID
+        TreatmentPlan plan = document.toObject(TreatmentPlan.class);
+        if (plan == null || !plan.getPetID().equals(petID)) {
+             throw new IllegalArgumentException("Treatment plan with ID " + planID + " does not belong to pet " + petID);
+        }
+    }
 }

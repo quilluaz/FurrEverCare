@@ -56,5 +56,14 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+
+        // In the doFilterInternal method, add these lines:
+System.out.println("DEBUG - JWT Filter - Auth header: " + (authHeader != null ? "present" : "null"));
+System.out.println("DEBUG - JWT Filter - Extracted userId: " + userId);
+
+// And before setting the authentication:
+System.out.println("DEBUG - JWT Filter - Setting auth for userId: " + userId);
     }
+
+    
 }

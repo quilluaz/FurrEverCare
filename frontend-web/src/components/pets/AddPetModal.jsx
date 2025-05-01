@@ -19,6 +19,7 @@ export default function AddPetModal({ onPetAdded, isOpen, onClose, pet, isEditMo
     if (isEditMode && pet) {
       setFormData({
         petID: pet.petID || "",
+        ownerID: pet.ownerID || userID, // Ensure ownerID is included
         name: pet.name || "",
         species: pet.species || "",
         breed: pet.breed || "",

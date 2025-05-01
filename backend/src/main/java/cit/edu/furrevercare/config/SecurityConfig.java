@@ -29,14 +29,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Add CORS configuration
-                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Apply CORS configuration from the bean below
+                .csrf(csrf -> csrf.disable()) // Disable CSRF (common for stateless APIs)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Allow unauthenticated access to auth endpoints
-                        .requestMatchers("/api/auth/login").permitAll() // Add this line explicitly
-                        .requestMatchers("/api/auth/register").permitAll() 
+                        .requestMatchers("/api/auth/**").permitAll() // Allow unauthenticated access to all /api/auth/ paths
+                        // .requestMatchers("/api/auth/login").permitAll() // Redundant due to the line above
+                        // .requestMatchers("/api/auth/register").permitAll() // Redundant due to the line above
                         .anyRequest().authenticated() // Require authentication for all other requests
                 )
+                // Add the custom JWT filter before the standard username/password auth filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -45,21 +46,44 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Collections.singletonList("*"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Origin"));
-        configuration.setExposedHeaders(Collections.singletonList("Authorization"));    
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
 
+        // *** CHANGE HERE: Allow both localhost and your Vercel deployment ***
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",             // For local development
+                "https://furr-ever-care.vercel.app"  // For your deployed frontend
+        ));
+
+        // Specify allowed HTTP methods
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Specify allowed headers (second call overrides the first commented one)
+        // configuration.setAllowedHeaders(Collections.singletonList("*")); // Allow all headers (less secure)
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization", // For JWT token
+                "Content-Type",  // For request body type (e.g., application/json)
+                "Origin"         // Standard header sent by browsers
+                // Add any other custom headers your frontend might send
+        ));
+
+        // Specify headers the frontend JavaScript can access from the response
+        configuration.setExposedHeaders(Collections.singletonList("Authorization")); // e.g., if you refresh token via headers
+
+        // Allow credentials (like cookies, authorization headers)
+        configuration.setAllowCredentials(true);
+
+        // How long the results of a preflight request (OPTIONS) can be cached
+        configuration.setMaxAge(3600L); // 1 hour
+
+        // Apply this configuration to all paths under /api/
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
+
         return source;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        // Use BCrypt for password hashing
         return new BCryptPasswordEncoder();
     }
 }

@@ -1,7 +1,0 @@
-# Ignore build output
-/build
-/app/build
-
-# Ignore Firebase config
-google-services.json
-app/google-services.jsonAQ

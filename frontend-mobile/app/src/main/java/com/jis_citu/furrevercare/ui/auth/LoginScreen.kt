@@ -1,59 +1,44 @@
 package com.jis_citu.furrevercare.ui.auth
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.jis_citu.furrevercare.R
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.Background
-import com.jis_citu.furrevercare.theme.FurrEverCareTheme
 import com.jis_citu.furrevercare.theme.PrimaryGreen
+import com.google.firebase.auth.FirebaseAuth
+import com.jis_citu.furrevercare.model.User
+import com.jis_citu.furrevercare.network.ApiService
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val auth = FirebaseAuth.getInstance()  // Initialize FirebaseAuth
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -70,7 +55,7 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.align(Alignment.Start)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
                     contentDescription = "Back"
                 )
             }
@@ -119,20 +104,27 @@ fun LoginScreen(navController: NavController) {
                         .padding(horizontal = 32.dp, vertical = 8.dp)
                 )
 
-                Text(
-                    text = "Forgot Password?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .padding(end = 32.dp, top = 4.dp, bottom = 16.dp)
-                        .clickable { navController.navigate(Routes.FORGOT_PASSWORD_EMAIL) }
-                )
+                if (errorMessage.isNotEmpty()) {
+                    Text(text = errorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
+                }
 
                 Button(
                     onClick = {
-                        // Handle login logic here
-                        navController.navigate(Routes.MAIN) {
-                            popUpTo(Routes.WELCOME_AUTH) { inclusive = true }
+                        if (email.isNotEmpty() && password.isNotEmpty()) {
+                            auth.signInWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val user = auth.currentUser
+                                        if (user != null) {
+                                            // Fetch user data from the backend after Firebase login
+                                            fetchUserProfile(user.uid, navController)
+                                        }
+                                    } else {
+                                        errorMessage = "Login failed: ${task.exception?.message}"
+                                    }
+                                }
+                        } else {
+                            errorMessage = "Please enter both email and password."
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
@@ -142,36 +134,31 @@ fun LoginScreen(navController: NavController) {
                 ) {
                     Text(text = "Log In")
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Don't have an account? ",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "Register",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = PrimaryGreen,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            navController.navigate(Routes.REGISTER)
-                        }
-                    )
-                }
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    FurrEverCareTheme {
-        LoginScreen(rememberNavController())
-    }
+fun fetchUserProfile(userId: String, navController: NavController) {
+    val apiService = ApiService.create()
+    apiService.getUser(userId).enqueue(object : Callback<User> {
+        override fun onResponse(call: Call<User>, response: Response<User>) {
+            if (response.isSuccessful) {
+                val user = response.body()
+                if (user != null) {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.WELCOME_AUTH) { inclusive = true }
+                    }
+                } else {
+                    Log.e("LoginError", "User data is null")
+                }
+            } else {
+                Log.e("LoginError", "Failed to fetch user data: ${response.message()}")
+            }
+        }
+
+        override fun onFailure(call: Call<User>, t: Throwable) {
+            Log.e("LoginError", "Error fetching user data: ${t.message}")
+        }
+    })
 }

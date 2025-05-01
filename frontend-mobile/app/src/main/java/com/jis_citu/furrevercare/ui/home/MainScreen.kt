@@ -25,10 +25,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.AccentGold
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
 import com.jis_citu.furrevercare.ui.article.SearchScreen
-import com.jis_citu.furrevercare.ui.chat.ChatBotScreen
 import com.jis_citu.furrevercare.ui.profile.ProfileScreen
 import com.jis_citu.furrevercare.ui.pet.PetListScreen
 
@@ -80,7 +80,10 @@ fun MainScreen(navController: NavController) {
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedItemIndex) {
                 0 -> HomeScreen(navController)
-                1 -> ChatBotScreen(navController)
+                1 -> {
+                    val sessionId = "current_session_id"
+                    navController.navigate("${Routes.CHAT_BOT}?session=$sessionId")
+                }
                 2 -> SearchScreen(navController)
                 3 -> PetListScreen(navController)
                 4 -> ProfileScreen(navController)

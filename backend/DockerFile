@@ -1,0 +1,28 @@
+# Stage 1: Build the application using Maven wrapper
+FROM eclipse-temurin:17-jdk-jammy as builder
+WORKDIR /app
+
+# Copy pom.xml and wrapper first to leverage Docker cache for dependencies
+# Ensure these files exist in your 'backend' directory and are committed to Git
+COPY ./mvnw .
+COPY ./.mvn ./.mvn
+COPY ./pom.xml .
+
+# Download dependencies using the wrapper
+RUN ./mvnw dependency:go-offline -B
+
+# Copy the rest of the source code
+COPY ./src ./src
+
+# Package the application using the wrapper (skip tests)
+RUN ./mvnw package -DskipTests -B
+
+# Stage 2: Create the final lightweight image
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+
+# Copy the built JAR file from the builder stage
+COPY --from=builder /app/target/furrevercare-0.0.1-SNAPSHOT.jar app.jar
+
+# Command to run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -35,7 +35,7 @@ export default function PetProfiles() {
 
   const user = AuthService.getUser();
   const userID = user?.userId || null;
-  const API_BASE_URL = "http://localhost:8080/api/users";
+  const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
 
   useEffect(() => {
     AuthService.init();
@@ -51,7 +51,8 @@ export default function PetProfiles() {
       const res = await axios.get(`${API_BASE_URL}/${userID}/pets`);
       const sanitizedPets = res.data.map((pet) => ({
         ...pet,
-        imageBase64: pet.imageBase64 && pet.imageBase64 !== "" ? pet.imageBase64 : null,
+        imageBase64:
+          pet.imageBase64 && pet.imageBase64 !== "" ? pet.imageBase64 : null,
       }));
       setPets(sanitizedPets);
       setError(null);
@@ -74,7 +75,12 @@ export default function PetProfiles() {
     const tempId = `temp-${Date.now()}`;
     setShowAddPetModal(false);
     const tempPetData = JSON.parse(await formData.get("pet").text());
-    const tempPet = { ...tempPetData, petID: tempId, allergies: tempPetData.allergies || [], imageBase64: null };
+    const tempPet = {
+      ...tempPetData,
+      petID: tempId,
+      allergies: tempPetData.allergies || [],
+      imageBase64: null,
+    };
     setPets((p) => [...p, tempPet]);
     setLoadingPetIds((ids) => [...ids, tempId]);
 
@@ -85,7 +91,11 @@ export default function PetProfiles() {
       const petIdMatch = res.data.match(/ID: (\S+)/);
       const realId = petIdMatch ? petIdMatch[1] : tempId;
       setPets((p) =>
-        p.map((pt) => (pt.petID === tempId ? { ...tempPet, petID: realId, imageBase64: null } : pt))
+        p.map((pt) =>
+          pt.petID === tempId
+            ? { ...tempPet, petID: realId, imageBase64: null }
+            : pt
+        )
       );
       setLoadingPetIds((ids) => ids.filter((id) => id !== tempId));
       setLastAddedPet({ ...tempPet, petID: realId, imageBase64: null });
@@ -123,7 +133,11 @@ export default function PetProfiles() {
     setPets((p) =>
       p.map((pt) =>
         pt.petID === petId
-          ? { ...updatedPetData, petID: petId, imageBase64: updatedPetData.imageBase64 || null }
+          ? {
+              ...updatedPetData,
+              petID: petId,
+              imageBase64: updatedPetData.imageBase64 || null,
+            }
           : pt
       )
     );
@@ -133,7 +147,10 @@ export default function PetProfiles() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setLoadingPetIds((ids) => ids.filter((id) => id !== petId));
-      setLastEditedPet({ ...updatedPetData, imageBase64: updatedPetData.imageBase64 || null });
+      setLastEditedPet({
+        ...updatedPetData,
+        imageBase64: updatedPetData.imageBase64 || null,
+      });
       setIsEditConfirmation(false);
       setShowEditConfModal(true);
       fetchPets(); // Refresh pets to get updated imageBase64
@@ -176,17 +193,20 @@ export default function PetProfiles() {
       <UserNavBar />
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6 mt-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#042C3C]">Pet Profiles</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#042C3C]">
+            Pet Profiles
+          </h2>
           <button
             className="flex items-center gap-2 px-4 py-1.5 bg-[#EA6C7B] text-white rounded-full text-sm hover:bg-[#EA6C7B]/90 transition"
             onClick={() => setShowAddPetModal(true)}
-            disabled={!userID}
-          >
+            disabled={!userID}>
             <Plus className="h-4 w-4" />
             Add Pet
           </button>
         </div>
-        {error && <p className="text-red-500 mb-4 text-center text-sm">{error}</p>}
+        {error && (
+          <p className="text-red-500 mb-4 text-center text-sm">{error}</p>
+        )}
         {loading && pets.length === 0 ? (
           <div className="flex flex-col items-center py-10">
             <Loader className="h-8 w-8 text-[#EA6C7B] animate-spin" />
@@ -201,8 +221,7 @@ export default function PetProfiles() {
             {pets.map((pet) => (
               <div
                 key={pet.petID}
-                className="bg-white rounded-lg shadow relative overflow-hidden text-sm"
-              >
+                className="bg-white rounded-lg shadow relative overflow-hidden text-sm">
                 {isPetLoading(pet.petID) && (
                   <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-10">
                     <Loader className="h-6 w-6 text-[#EA6C7B] animate-spin" />
@@ -224,23 +243,25 @@ export default function PetProfiles() {
                         </div>
                       )}
                       <div>
-                        <h2 className="text-lg font-semibold text-[#042C3C]">{pet.name}</h2>
-                        <p className="text-xs text-gray-500">{pet.species} · {pet.breed}</p>
+                        <h2 className="text-lg font-semibold text-[#042C3C]">
+                          {pet.name}
+                        </h2>
+                        <p className="text-xs text-gray-500">
+                          {pet.species} · {pet.breed}
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-1">
                       <button
                         onClick={() => confirmEditPet(pet)}
                         disabled={!userID || isPetLoading(pet.petID)}
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded"
-                      >
+                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded">
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => confirmDeletePet(pet)}
                         disabled={!userID || isPetLoading(pet.petID)}
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded"
-                      >
+                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -256,12 +277,16 @@ export default function PetProfiles() {
                     </div>
                     <div>
                       <p className="text-[10px] text-[#042C3C]">Gender</p>
-                      <p className="text-xs text-gray-500">{pet.gender || "Unknown"}</p>
+                      <p className="text-xs text-gray-500">
+                        {pet.gender || "Unknown"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[10px] text-[#042C3C]">Allergies</p>
                       <p className="text-xs text-gray-500">
-                        {pet.allergies && pet.allergies.length ? pet.allergies.join(", ") : "None"}
+                        {pet.allergies && pet.allergies.length
+                          ? pet.allergies.join(", ")
+                          : "None"}
                       </p>
                     </div>
                   </div>

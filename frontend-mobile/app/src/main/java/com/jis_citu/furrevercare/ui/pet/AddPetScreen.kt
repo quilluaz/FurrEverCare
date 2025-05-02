@@ -1,344 +1,273 @@
 package com.jis_citu.furrevercare.ui.pet
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.AddAPhoto // Changed icon
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color // <<< Added Import
+import androidx.compose.ui.graphics.asImageBitmap // <<< Added Import for Base64
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource // Import painterResource for fallback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType // Import KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview // Keep preview if needed
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.rememberNavController // Keep for preview if needed
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.jis_citu.furrevercare.R // For placeholder image if needed
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
 import com.jis_citu.furrevercare.theme.PrimaryGreen
+// Import the ViewModel and related classes used in EditPetScreen
+import com.jis_citu.furrevercare.utils.decodeBase64 // <<< Add this import
+import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetViewModel
+import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetNavigationEvent
+// Removed viewModel.decodeBase64 as it's included below now
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPetScreen(navController: NavController) {
+fun EditPetScreen( // Renamed composable for clarity if it edits pets
+    navController: NavController,
+    viewModel: EditPetViewModel = hiltViewModel() // Inject ViewModel
+) {
+    val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
-    var petName by remember { mutableStateOf("") }
-    var petAge by remember { mutableStateOf("") }
-    var petWeight by remember { mutableStateOf("") }
-
-    var selectedSpecies by remember { mutableStateOf("") }
-    var speciesExpanded by remember { mutableStateOf(false) }
-    val speciesList = listOf("Dog", "Cat", "Bird", "Rabbit", "Hamster", "Fish", "Other")
-
-    var selectedBreed by remember { mutableStateOf("") }
-    var breedExpanded by remember { mutableStateOf(false) }
-    val breedList = when (selectedSpecies) {
-        "Dog" -> listOf("Labrador", "German Shepherd", "Bulldog", "Poodle", "Beagle", "Mixed", "Other")
-        "Cat" -> listOf("Persian", "Siamese", "Maine Coon", "Ragdoll", "Bengal", "Mixed", "Other")
-        else -> listOf("Select species first")
-    }
-
-    var selectedGender by remember { mutableStateOf("") }
-    var genderExpanded by remember { mutableStateOf(false) }
-    val genderList = listOf("Male", "Female")
-
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.navigateUp() }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
+    // Handle navigation
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collectLatest { event ->
+            when (event) {
+                is EditPetNavigationEvent.NavigateBack -> {
+                    navController.navigateUp()
                 }
+            }
+        }
+    }
 
-                Text(
-                    text = "Add New Pet",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+    // Image Picker
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            viewModel.updateImageUri(uri)
+        }
+    )
+
+    FurrEverCareTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Edit Pet Profile") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background, // Match background
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
             }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .verticalScroll(scrollState),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Pet Image
-                Box(
+        ) { paddingValues ->
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Column(
                     modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(2.dp, PrimaryGreen, CircleShape)
-                        .clickable { imagePicker.launch("image/*") },
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 16.dp, vertical = 8.dp) // Padding for content
+                        .verticalScroll(scrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (imageUri != null) {
+                    // Pet Image Picker/Display
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
+                            .border(2.dp, PrimaryGreen, CircleShape)
+                            .clickable { imagePicker.launch("image/*") }, // Launch picker on click
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Determine the data source for the image
+                        val imageData: Any? = if (uiState.imageUri != null) {
+                            // Prioritize newly picked image Uri
+                            uiState.imageUri
+                        } else if (!uiState.existingImageBase64.isNullOrBlank()) {
+                            // Use existing Base64 if available (decode it)
+                            decodeBase64(uiState.existingImageBase64!!) // Use helper function
+                        } else {
+                            // Fallback to placeholder resource ID
+                            R.drawable.logo_icon_colored // <<< Use your actual placeholder drawable
+                        }
+
                         Image(
                             painter = rememberAsyncImagePainter(
                                 ImageRequest.Builder(context)
-                                    .data(data = imageUri)
+                                    .data(data = imageData) // Load Uri, Bitmap, or Resource ID
+                                    .placeholder(R.drawable.logo_icon_colored) // Placeholder while loading
+                                    .error(R.drawable.logo_icon_colored) // Error fallback
                                     .build()
                             ),
                             contentDescription = "Pet Image",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Crop // Crop to fit the circle
                         )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Add Photo",
-                                tint = PrimaryGreen,
-                                modifier = Modifier.size(32.dp)
-                            )
 
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = "Add Photo",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = PrimaryGreen
-                            )
-                        }
+                        // Icon overlay - Uses imported Color now
+                        Icon(
+                            imageVector = Icons.Default.AddAPhoto,
+                            contentDescription = "Change Photo",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(8.dp)
+                                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                                .padding(4.dp)
+                        )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                // Pet Name
-                OutlinedTextField(
-                    value = petName,
-                    onValueChange = { petName = it },
-                    label = { Text("Pet Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Species Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = speciesExpanded,
-                    onExpandedChange = { speciesExpanded = !speciesExpanded }
-                ) {
-                    TextField(
-                        value = selectedSpecies,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) },
-                        placeholder = { Text("Select Species") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                    // Pet Name
+                    OutlinedTextField(
+                        value = uiState.petName,
+                        onValueChange = viewModel::updatePetName,
+                        label = { Text("Pet Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp)
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    ExposedDropdownMenu(
-                        expanded = speciesExpanded,
-                        onDismissRequest = { speciesExpanded = false }
-                    ) {
-                        speciesList.forEach { species ->
-                            DropdownMenuItem(
-                                text = { Text(text = species) },
-                                onClick = {
-                                    selectedSpecies = species
-                                    speciesExpanded = false
-                                    // Reset breed when species changes
-                                    selectedBreed = ""
-                                }
-                            )
-                        }
-                    }
-                }
+                    // --- TODO: Implement ExposedDropdownMenuBoxes properly ---
+                    // These require state variables for 'expanded' status and logic
+                    // to populate the dropdown items and handle selections, likely
+                    // involving updates to the ViewModel. The current setup is read-only.
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Breed Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = breedExpanded,
-                    onExpandedChange = {
-                        if (selectedSpecies.isNotEmpty()) {
-                            breedExpanded = !breedExpanded
-                        }
-                    }
-                ) {
-                    TextField(
-                        value = selectedBreed,
+                    // Species (Read-Only Example - Needs proper dropdown)
+                    OutlinedTextField(
+                        value = uiState.species,
                         onValueChange = {},
+                        label = { Text("Species") },
                         readOnly = true,
-                        enabled = selectedSpecies.isNotEmpty(),
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = breedExpanded) },
-                        placeholder = { Text("Select Breed") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                        enabled = !uiState.isSaving,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    ExposedDropdownMenu(
-                        expanded = breedExpanded,
-                        onDismissRequest = { breedExpanded = false }
-                    ) {
-                        breedList.forEach { breed ->
-                            DropdownMenuItem(
-                                text = { Text(text = breed) },
-                                onClick = {
-                                    selectedBreed = breed
-                                    breedExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Gender Dropdown
-                ExposedDropdownMenuBox(
-                    expanded = genderExpanded,
-                    onExpandedChange = { genderExpanded = !genderExpanded }
-                ) {
-                    TextField(
-                        value = selectedGender,
+                    // Breed (Read-Only Example - Needs proper dropdown)
+                    OutlinedTextField(
+                        value = uiState.breed,
                         onValueChange = {},
+                        label = { Text("Breed") },
                         readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
-                        placeholder = { Text("Select Gender") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
+                        enabled = uiState.species.isNotEmpty() && !uiState.isSaving,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    ExposedDropdownMenu(
-                        expanded = genderExpanded,
-                        onDismissRequest = { genderExpanded = false }
+                    // Gender (Read-Only Example - Needs proper dropdown)
+                    OutlinedTextField(
+                        value = uiState.gender,
+                        onValueChange = {},
+                        label = { Text("Gender") },
+                        readOnly = true,
+                        enabled = !uiState.isSaving,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // --- End of Dropdown TODO ---
+
+
+                    // Age
+                    OutlinedTextField(
+                        value = uiState.age,
+                        onValueChange = viewModel::updateAge,
+                        label = { Text("Age (years)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        enabled = !uiState.isSaving,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Weight
+                    OutlinedTextField(
+                        value = uiState.weight,
+                        onValueChange = viewModel::updateWeight,
+                        label = { Text("Weight (kg)") }, // TODO: Add unit preference if needed
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        enabled = !uiState.isSaving,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Display Error Message
+                    uiState.errorMessage?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Save Button
+                    Button(
+                        onClick = viewModel::savePetChanges,
+                        enabled = !uiState.isSaving && !uiState.isLoading, // Enable only when not saving/loading
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        genderList.forEach { gender ->
-                            DropdownMenuItem(
-                                text = { Text(text = gender) },
-                                onClick = {
-                                    selectedGender = gender
-                                    genderExpanded = false
-                                }
-                            )
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        } else {
+                            Text("Update Pet")
                         }
                     }
+                    Spacer(modifier = Modifier.height(16.dp)) // Bottom padding
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Age
-                OutlinedTextField(
-                    value = petAge,
-                    onValueChange = { petAge = it },
-                    label = { Text("Age (years)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Weight
-                OutlinedTextField(
-                    value = petWeight,
-                    onValueChange = { petWeight = it },
-                    label = { Text("Weight (kg)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Save Button
-                Button(
-                    onClick = {
-                        // Save pet logic would go here
-                        navController.navigateUp()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Save Pet")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddPetScreenPreview() {
-    FurrEverCareTheme {
-        AddPetScreen(rememberNavController())
     }
 }

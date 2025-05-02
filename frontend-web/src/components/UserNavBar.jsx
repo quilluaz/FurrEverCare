@@ -51,6 +51,7 @@ function UserNavBar() {
             { to: "/mypets", label: "My Pets" },
             { to: "/treat", label: "Treatment Tracker" },
             { to: "/wellness-timeline", label: "Wellness Timeline" },
+           /**  { to: "/tasks", label: "Tasks" }, **/// Added Tasks link
           ].map(({ to, label }) => (
             <Link
               key={to}

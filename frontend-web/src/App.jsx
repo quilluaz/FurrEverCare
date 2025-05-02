@@ -10,6 +10,7 @@ import PetProfiles from "./screens/PetProfiles";
 import UserPawPedia from "./screens/UserPawPedia";
 import UserProfile from "./screens/UserProfile";
 import TreatmentPlans from "./screens/TreatmentPlans";
+import ScheduledTasks from './components/ScheduledTasks';
 
 import React from "react";
 
@@ -38,7 +39,8 @@ function App() {
           <Route path="/home-pawpedia" element={<UserPawPedia />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="treat" element={<TreatmentPlans/>} />
-
+          <Route path="/tasks" element={<ScheduledTasks />} />
+          
         </Routes>
       </div>
     </Router>

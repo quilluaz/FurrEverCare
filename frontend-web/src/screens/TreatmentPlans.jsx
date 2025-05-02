@@ -258,50 +258,73 @@ export default function TreatmentPlans() {
 
   // Updated to accept updatedPlanData and accessToken
   const handleEditPlan = async (updatedPlanData, accessToken) => {
-    if (!userID || !selectedPetId || !selectedPlan) {
-      // Use selectedPetId
-      setError("Please log in and select a pet/plan to edit.");
-      return;
+    // Ensure selectedPlan (which holds the original ID) is available
+    if (!userID || !selectedPetId || !selectedPlan || !selectedPlan.planID) {
+      console.error("handleEditPlan Error: Missing data", { userID, selectedPetId, selectedPlan });
+      setError("User, pet, or plan information is missing. Cannot update.");
+      setShowEditPlanModal(false); // Close modal even on error
+      setSelectedPlan(null); // Clear selected plan
+      return; // Stop execution
     }
+
+    const planId = selectedPlan.planID; // Get ID from the state variable
+    console.log(`handleEditPlan: Submitting edit for plan ID: ${planId}`, updatedPlanData);
+
     setShowEditPlanModal(false);
-    // No need to parse from FormData anymore
-    const planId = selectedPlan.planID; // Use ID from selectedPlan
     setLoadingPlanIds((ids) => [...ids, planId]);
 
     const originalPlans = [...plans];
+    // Optimistic UI update: Merge the updated data with the existing plan
     setPlans((p) =>
-      p.map(
-        (pl) => (pl.planID === planId ? { ...pl, ...updatedPlanData } : pl) // Merge updates
+      p.map((pl) =>
+        pl.planID === planId ? { ...pl, ...updatedPlanData } : pl // Keep existing fields, overwrite with updates
       )
     );
 
     try {
-      // Use updatedPlanData directly and add Authorization header
+      // Ensure updatedPlanData is exactly what the backend expects for a PUT request
+      // The modal should format the date correctly (e.g., ISO string)
       await axios.put(
         `${API_BASE_URL}/${userID}/pets/${selectedPetId}/treatmentPlans/${planId}`,
-        updatedPlanData, // Send the updatedPlanData object directly
+        updatedPlanData, // Send the data prepared by the modal
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         }
       );
+
+      // --- Success Handling ---
+      console.log("handleEditPlan: Edit successful for plan ID:", planId);
       setLoadingPlanIds((ids) => ids.filter((id) => id !== planId));
-      setLastEditedPlan({ ...updatedPlanData, planID: planId }); // Ensure ID is included
-      setIsEditConfirmation(false); // This indicates the success confirmation modal
-      setShowEditConfModal(true); // Show success confirmation
-      setSelectedPlan(null); // Clear selected plan after edit
+
+      // Prepare data for the success confirmation modal (Optional, can be removed if not needed elsewhere)
+      // const finalUpdatedPlan = { ...selectedPlan, ...updatedPlanData };
+      // setLastEditedPlan(finalUpdatedPlan);
+
+      // REMOVED: These lines showed the success confirmation modal
+      // setIsEditConfirmation(false); // Set mode to "Success"
+      // setShowEditConfModal(true); // Show the success confirmation modal
+
+      setSelectedPlan(null); // Clear selected plan state after successful edit
+      // Optional: Uncomment to fetch fresh data immediately after edit
+      // fetchPlans(selectedPetId);
+
     } catch (err) {
-      console.error("Failed to update treatment plan:", err.response || err);
+      console.error("handleEditPlan Error: Failed to update treatment plan:", err.response || err);
       setPlans(originalPlans); // Revert optimistic update on error
       setLoadingPlanIds((ids) => ids.filter((id) => id !== planId));
-      // Keep the 403 handling
+      setSelectedPlan(null); // Clear selected plan state on error
+
       if (err.response?.status === 403 || err.response?.status === 401) {
         alert("Authentication failed. Please log in again.");
         AuthService.clearAuth();
         window.location.href = "/login";
+      } else {
+         // Provide more specific error feedback if possible
+         const errorMsg = err.response?.data?.message || err.message || "An unknown error occurred.";
+         setError(`Failed to update treatment plan: ${errorMsg}`);
       }
-      setError("Failed to update treatment plan. Please try again.");
     }
   };
 
@@ -569,7 +592,7 @@ export default function TreatmentPlans() {
       <AddTreatmentPlanModal
         isOpen={showAddPlanModal}
         onClose={() => setShowAddPlanModal(false)}
-        onPlanAdded={handleAddPlan}
+        onSubmitPlan={handleAddPlan}
         userID={userID}
         petID={selectedPetId} // Pass selectedPetId
         key={`add-${showAddPlanModal}-${selectedPetId}`} // Add selectedPetId to key
@@ -582,7 +605,7 @@ export default function TreatmentPlans() {
           setShowEditPlanModal(false);
           setSelectedPlan(null); // Clear selected plan on close
         }}
-        onPlanAdded={handleEditPlan} // Use handleEditPlan for submission
+        onSubmitPlan={handleEditPlan}
         plan={selectedPlan} // Pass the plan to edit
         isEditMode={true} // Set to edit mode
         userID={userID}
@@ -626,5 +649,4 @@ export default function TreatmentPlans() {
         isConfirmation={isEditConfirmation} // Differentiates between prompt and success message
       />
     </div>
-  );
-}
+  );}

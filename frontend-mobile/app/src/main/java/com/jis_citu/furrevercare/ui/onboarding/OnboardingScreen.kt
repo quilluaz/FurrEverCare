@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import com.google.accompanist.pager.PagerIndicator
+import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.jis_citu.furrevercare.R
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.Background
@@ -80,7 +80,7 @@ fun OnboardingScreen(navController: NavController) {
                 OnboardingPage(onboardingPages[page])
             }
 
-            PagerIndicator(
+            HorizontalPagerIndicator(
                 pagerState = pagerState,
                 modifier = Modifier.padding(16.dp),
                 activeColor = PrimaryGreen

@@ -10,7 +10,9 @@ import PetProfiles from "./screens/PetProfiles";
 import UserPawPedia from "./screens/UserPawPedia";
 import UserProfile from "./screens/UserProfile";
 import TreatmentPlans from "./screens/TreatmentPlans";
-import ScheduledTasks from './components/ScheduledTasks';
+import Tasks from './screens/Tasks'
+import AuthService from "./config/AuthService";
+
 
 import React from "react";
 
@@ -24,7 +26,13 @@ const colors = {
 };
 
 function App() {
+ ;
+    AuthService.init();
+ 
+
+
   return (
+    
     <Router>
       <div style={{ overflowX: 'hidden' }}> {/* Prevent horizontal scrolling */}
         {/* Define Routes (updated for React Router v6) */}
@@ -39,7 +47,7 @@ function App() {
           <Route path="/home-pawpedia" element={<UserPawPedia />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="treat" element={<TreatmentPlans/>} />
-          <Route path="/tasks" element={<ScheduledTasks />} />
+          <Route path="/tasks" element={<Tasks />} />
           
         </Routes>
       </div>

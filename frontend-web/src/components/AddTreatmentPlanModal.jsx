@@ -12,7 +12,7 @@ export default function AddTreatmentPlanModal({
 }) {
   const [formData, setFormData] = useState({ // Initial state
     name: "", description: "", startDate: "", goal: "",
-    status: "ACTIVE", progressPercentage: 0, notes: "",
+    status: "ACTIVE", progressPercentage: "", notes: "", // Initialize progressPercentage as empty string
   });
   const [isLoading, setIsLoading] = useState(false); // Optional loading state
   const [error, setError] = useState(null); // Optional error state
@@ -59,10 +59,19 @@ export default function AddTreatmentPlanModal({
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'number' ? parseInt(value) || 0 : value,
-    }));
+    setFormData((prev) => {
+      let newValue = value;
+      // Allow empty string for progressPercentage, otherwise parse or default to 0
+      if (name === 'progressPercentage') {
+        newValue = value === '' ? '' : parseInt(value) || 0;
+      } else if (type === 'number') {
+        newValue = parseInt(value) || 0;
+      }
+      return {
+        ...prev,
+        [name]: newValue,
+      };
+    });
   };
 
   // Handle form submission

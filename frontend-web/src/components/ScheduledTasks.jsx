@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import TaskService from '../config/TaskService';
 import AuthService from '../config/AuthService';
 import PetService from '../config/PetService'; // Assuming you have a PetService similar to TaskService
@@ -28,22 +28,35 @@ const RecurrenceRule = {
     MONTHLY: 'Monthly'
 };
 
+const MIN_LOADING_TIME = 500; // Minimum time in ms to show loading indicator
+
 
 function ScheduledTasks() {
     const [tasks, setTasks] = useState([]);
     const [pets, setPets] = useState([]);
     const [selectedPetId, setSelectedPetId] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPetsLoading, setIsPetsLoading] = useState(true); // Start loading pets initially
+    const [isTasksLoading, setIsTasksLoading] = useState(false);
     const [error, setError] = useState(null);
     const [editingTask, setEditingTask] = useState(null); // Task object being edited or null for new task
     const [showForm, setShowForm] = useState(false);
+    const petLoadStartTime = useRef(null);
+    const taskLoadStartTime = useRef(null);
 
     const user = AuthService.getUser();
     const userId = user?.uid || user?.userID; // Adapt based on your AuthService user object structure
 
     const fetchPets = useCallback(async () => {
-        if (!userId) return;
-        setIsLoading(true);
+        if (!userId) {
+            setIsPetsLoading(false); // Stop loading if no user
+            return;
+        }
+        petLoadStartTime.current = Date.now(); // Record start time
+        setIsPetsLoading(true);
+        setError(null); // Clear previous errors
+        setPets([]); // Clear pets before fetching
+        setSelectedPetId(''); // Reset selected pet
+        setTasks([]); // Clear tasks when pets are re-fetched
         try {
             // Assuming PetService.getUserPets exists and works like TaskService
             const response = await PetService.getUserPets(userId);
@@ -57,7 +70,13 @@ function ScheduledTasks() {
             setError('Failed to fetch pets.');
             console.error(err);
         } finally {
-            setIsLoading(false);
+            const elapsedTime = Date.now() - petLoadStartTime.current;
+            const remainingTime = MIN_LOADING_TIME - elapsedTime;
+            if (remainingTime > 0) {
+                setTimeout(() => setIsPetsLoading(false), remainingTime);
+            } else {
+                setIsPetsLoading(false);
+            }
         }
     }, [userId]);
 
@@ -65,9 +84,11 @@ function ScheduledTasks() {
     const fetchTasks = useCallback(async () => {
         if (!userId || !selectedPetId) {
             setTasks([]); // Clear tasks if no user or pet selected
+            setIsTasksLoading(false); // Ensure loading stops if no fetch happens
             return;
         };
-        setIsLoading(true);
+        taskLoadStartTime.current = Date.now(); // Record start time
+        setIsTasksLoading(true);
         setError(null);
         try {
             const response = await TaskService.getTasks(userId, selectedPetId);
@@ -84,7 +105,13 @@ function ScheduledTasks() {
                 // Optionally redirect to login: navigate('/login');
             }
         } finally {
-            setIsLoading(false);
+            const elapsedTime = Date.now() - taskLoadStartTime.current;
+            const remainingTime = MIN_LOADING_TIME - elapsedTime;
+            if (remainingTime > 0) {
+                setTimeout(() => setIsTasksLoading(false), remainingTime);
+            } else {
+                setIsTasksLoading(false);
+            }
         }
     }, [userId, selectedPetId]);
 
@@ -123,14 +150,16 @@ function ScheduledTasks() {
 
     const handleDeleteClick = async (taskId) => {
         if (window.confirm('Are you sure you want to delete this task?')) {
-            setIsLoading(true);
+            // No need to set loading here, fetchTasks will handle it
+            // setIsLoading(true); 
             try {
                 await TaskService.deleteTask(userId, selectedPetId, taskId);
-                fetchTasks(); // Refresh list
+                fetchTasks(); // Refresh list (will set isTasksLoading)
             } catch (err) {
                 setError('Failed to delete task.');
                 console.error(err);
-                setIsLoading(false);
+                // No need to set loading false here, fetchTasks finally block handles it
+                // setIsLoading(false); 
             }
         }
     };
@@ -139,7 +168,8 @@ function ScheduledTasks() {
         event.preventDefault();
         if (!editingTask || !userId || !selectedPetId) return;
 
-        setIsLoading(true);
+        // No need to set loading here, fetchTasks will handle it after success
+        // setIsLoading(true); 
         setError(null);
 
         // Prepare data for backend (convert date back if needed, ensure enums are strings)
@@ -166,11 +196,12 @@ function ScheduledTasks() {
             }
             setShowForm(false);
             setEditingTask(null);
-            fetchTasks(); // Refresh list
+            fetchTasks(); // Refresh list (will set isTasksLoading)
         } catch (err) {
             setError(`Failed to ${editingTask.taskID ? 'update' : 'add'} task.`);
             console.error(err);
-            setIsLoading(false);
+            // No need to set loading false here, fetchTasks finally block handles it
+            // setIsLoading(false); 
         }
     };
 
@@ -210,22 +241,29 @@ function ScheduledTasks() {
         <div className="container mx-auto p-6 font-['Baloo']" style={{ color: "#042C3C" }}>
             <h1 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: "#042C3C" }}>Scheduled Tasks</h1>
 
-            {/* Pet Selector */}
+            {/* Pet Selector - Conditional Rendering */}
             <div className="mb-4">
                 <label htmlFor="pet-select" className="mr-2 font-semibold">Select Pet:</label>
-                <select
-                    id="pet-select"
-                    value={selectedPetId}
-                    onChange={handlePetChange}
-                    disabled={isLoading || pets.length === 0}
-                    className="p-2 border rounded"
-                    style={{ borderColor: "#8A973F" }}
-                >
-                    {pets.length === 0 && <option value="">No pets available</option>}
-                    {pets.map(pet => (
-                        <option key={pet.petID} value={pet.petID}>{pet.name}</option>
-                    ))}
-                </select>
+                {isPetsLoading ? (
+                    <span className="text-sm text-gray-500 italic">Loading pets...</span>
+                ) : pets.length > 0 ? (
+                    <select
+                        id="pet-select"
+                        value={selectedPetId}
+                        onChange={handlePetChange}
+                        disabled={isTasksLoading} // Disable only when tasks for the selected pet are loading
+                        className="p-2 border rounded"
+                        style={{ borderColor: "#8A973F" }}
+                    >
+                        {/* Default prompt option */}
+                        {selectedPetId === '' && <option value="" disabled>-- Select a Pet --</option>}
+                        {pets.map(pet => (
+                            <option key={pet.petID} value={pet.petID}>{pet.name}</option>
+                        ))}
+                    </select>
+                ) : !isPetsLoading && pets.length === 0 ? (
+                    <span className="text-sm text-gray-500 italic">No pets found.</span>
+                ) : null /* Handle other states like error if needed */}
             </div>
 
 
@@ -233,7 +271,7 @@ function ScheduledTasks() {
 
             <button
                 onClick={handleAddNewClick}
-                disabled={isLoading || !selectedPetId}
+                disabled={isPetsLoading || isTasksLoading || !selectedPetId}
                 className="bg-[#EA6C7B] text-white px-4 py-2 rounded hover:bg-opacity-80 transition duration-200 mb-4 disabled:opacity-50"
             >
                 Add New Task
@@ -282,10 +320,10 @@ function ScheduledTasks() {
                         </div>
                     </div>
                     <div className="mt-4 flex gap-3">
-                        <button type="submit" disabled={isLoading} className="bg-[#8A973F] text-white px-4 py-2 rounded hover:bg-opacity-80 transition duration-200 disabled:opacity-50">
-                            {isLoading ? 'Saving...' : (editingTask.taskID ? 'Update Task' : 'Add Task')}
+                        <button type="submit" disabled={isTasksLoading} className="bg-[#8A973F] text-white px-4 py-2 rounded hover:bg-opacity-80 transition duration-200 disabled:opacity-50">
+                            {isTasksLoading ? 'Saving...' : (editingTask.taskID ? 'Update Task' : 'Add Task')}
                         </button>
-                        <button type="button" onClick={handleCancelEdit} disabled={isLoading} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-opacity-80 transition duration-200">
+                        <button type="button" onClick={handleCancelEdit} disabled={isTasksLoading} className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-opacity-80 transition duration-200">
                             Cancel
                         </button>
                     </div>
@@ -294,11 +332,11 @@ function ScheduledTasks() {
 
 
             {/* Task List */}
-            {isLoading && <p>Loading tasks...</p>}
-            {!isLoading && tasks.length === 0 && !error && selectedPetId && <p>No tasks found for the selected pet.</p>}
-            {!isLoading && tasks.length === 0 && !error && !selectedPetId && <p>Please select a pet to view tasks.</p>}
-
-            {!isLoading && tasks.length > 0 && (
+            {isTasksLoading && <p>Loading tasks...</p>}
+            {!isPetsLoading && !isTasksLoading && tasks.length === 0 && !error && selectedPetId && <p>No tasks found for the selected pet.</p>}
+            {!isPetsLoading && !isTasksLoading && tasks.length === 0 && !error && !selectedPetId && pets.length > 0 && <p>Please select a pet to view tasks.</p>}
+            {/* Removed the condition for !isLoading && tasks.length > 0, now it's the default case when not loading and tasks exist */}
+            {!isPetsLoading && !isTasksLoading && tasks.length > 0 && (
                 <div className="overflow-x-auto">
                     <table className="min-w-full bg-white border" style={{ borderColor: "#8A973F" }}>
                         <thead className="bg-[#042C3C] text-white">
@@ -325,14 +363,14 @@ function ScheduledTasks() {
                                         <button
                                             onClick={() => handleEditClick(task)}
                                             className="text-blue-600 hover:text-blue-800 mr-2"
-                                            disabled={isLoading}
+                                            disabled={isTasksLoading} // Disable during task loading
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleDeleteClick(task.taskID)}
                                             className="text-red-600 hover:text-red-800"
-                                            disabled={isLoading}
+                                            disabled={isTasksLoading} // Disable during task loading
                                         >
                                             Delete
                                         </button>

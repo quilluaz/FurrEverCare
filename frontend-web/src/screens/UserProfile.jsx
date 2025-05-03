@@ -36,7 +36,7 @@ const UserProfile = () => {
       console.log("AuthService.getUser():", userData)
       if (!userData) {
         setError("Please log in to view your profile.")
-        navigate("/login")
+        navigate("/")
         return
       }
       setUser({

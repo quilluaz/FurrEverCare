@@ -49,9 +49,10 @@ function UserNavBar() {
           {[
             { to: "/home-pawpedia", label: "PawPedia" },
             { to: "/mypets", label: "My Pets" },
-            { to: "/treat", label: "Treatment Tracker" },
+            { to: "/treat", label: "Treatment Plans" },
+            { to: "/tasks", label: "Tasks" }, 
             { to: "/wellness-timeline", label: "Wellness Timeline" },
-           /**  { to: "/tasks", label: "Tasks" }, **/// Added Tasks link
+            // Uncommented Tasks link
           ].map(({ to, label }) => (
             <Link
               key={to}

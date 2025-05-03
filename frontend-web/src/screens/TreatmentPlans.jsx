@@ -94,7 +94,7 @@ export default function TreatmentPlans() {
         setLoading(false); // Stop loading on error
         if (err.response?.status === 403) {
           AuthService.clearAuth();
-          window.location.href = "/login";
+          window.location.href = "/pawpedia";
         }
       }
     };

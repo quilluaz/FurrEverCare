@@ -32,8 +32,9 @@ export default function TreatmentPlans() {
 
   const user = AuthService.getUser();
   const userID = user?.userId || null;
-  const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
-
+  //const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
+  const API_BASE_URL = "http://localhost:8080/api/users";
+  
   // Get initial petID from URL query parameter (optional, can be overridden by dropdown)
   const urlParams = new URLSearchParams(window.location.search);
   const initialPetID = urlParams.get("petId");
@@ -498,7 +499,7 @@ export default function TreatmentPlans() {
                       <h2 className="text-lg font-semibold text-[#042C3C] break-words">
                         {plan.name}
                       </h2>
-                      <p className="text-xs text-gray-500 break-words">
+                      <p className="text-xs text-gray-500 break-words mb-1">
                         {plan.description}
                       </p>
                     </div>
@@ -527,7 +528,19 @@ export default function TreatmentPlans() {
                       </button>
                     </div>
                   </div>
-                  {/* ... rest of plan details ... */}
+                  {/* Progress Bar */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-600 mb-0.5">
+                        <span>Progress</span>
+                        <span>{plan.progressPercentage !== undefined ? `${plan.progressPercentage}%` : "N/A"}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-[#68D391] h-2 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${plan.progressPercentage || 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
                     <div>
                       <p className="text-[10px] font-medium text-[#042C3C]">

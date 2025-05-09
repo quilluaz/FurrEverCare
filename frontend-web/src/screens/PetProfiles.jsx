@@ -35,7 +35,8 @@ export default function PetProfiles() {
 
   const user = AuthService.getUser();
   const userID = user?.userId || null;
-  const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
+  //const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
+  const API_BASE_URL = "http://localhost:8080/api/users";
 
   useEffect(() => {
     AuthService.init();

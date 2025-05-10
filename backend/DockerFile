@@ -9,6 +9,7 @@ COPY ./.mvn ./.mvn
 COPY ./pom.xml .
 
 # Download dependencies using the wrapper
+RUN chmod +x ./mvnw
 RUN ./mvnw dependency:go-offline -B
 
 # Copy the rest of the source code

@@ -177,36 +177,6 @@ fun PetDetailsScreenContent(
                                 onClick = { navController.navigate("${Routes.MEDICAL_RECORD_LIST}/${pet.petID}") } // TODO: Ensure this route exists and leads to actual screen
                             )
                         }
-                        item {
-                            DetailActionCard(
-                                title = "Scheduled Tasks",
-                                icon = Icons.AutoMirrored.Filled.EventNote,
-                                onClick = { /* TODO: Navigate to Pet's Schedule List Screen */ }
-                            )
-                        }
-
-                        // TODO: Integrate actual medical records and schedules from ViewModel
-                        // For now, using sample data
-                        if (sampleMedicalRecords.isNotEmpty()) {
-                            item { SectionHeader(title = "Recent Medical Records") }
-                            items(sampleMedicalRecords.take(2)) { record -> // Show a few recent ones
-                                SimpleListItem(
-                                    headlineContent = { Text(record.title, fontWeight = FontWeight.SemiBold) },
-                                    supportingContent = { Text(record.description, maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                                    overlineContent = { Text(record.date) }
-                                )
-                            }
-                        }
-
-                        if (sampleSchedules.isNotEmpty()) {
-                            item { SectionHeader(title = "Upcoming Schedules") }
-                            items(sampleSchedules.take(2)) { schedule ->
-                                SimpleListItem(
-                                    headlineContent = { Text(schedule.title, fontWeight = FontWeight.SemiBold) },
-                                    supportingContent = { Text("${schedule.date}, ${schedule.time}") }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -378,48 +348,5 @@ fun SimpleListItem(
         overlineContent?.invoke()
         headlineContent()
         supportingContent?.invoke()
-    }
-}
-
-
-// --- Previews ---
-@Preview(showBackground = true, name = "PetDetailsScreen Light")
-@Composable
-fun PetDetailsScreenPreviewLight() {
-    val samplePet = Pet(petID = "1", name = "Buddy", species = "Dog", breed = "Golden Retriever", age = 3, gender = "Male", weight = 28.5, allergies = listOf("Peanuts", "Dust Mites"), imageBase64 = null)
-    FurrEverCareTheme(darkTheme = false) {
-        PetDetailsScreenContent(
-            uiState = PetDetailsUiState(pet = samplePet, isLoading = false),
-            navController = rememberNavController(),
-            sampleMedicalRecords = listOf(MedicalRecord("1", "Annual Vax", "2024-03-10", "All shots up to date.")),
-            sampleSchedules = listOf(Schedule("s1", "Grooming", "2024-05-15", "02:00 PM"))
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "PetDetailsScreen Dark")
-@Composable
-fun PetDetailsScreenPreviewDark() {
-    val samplePet = Pet(petID = "1", name = "Whiskers", species = "Cat", breed = "Siamese", age = 2, gender = "Female", weight = 4.2, imageBase64 = null)
-    FurrEverCareTheme(darkTheme = true) {
-        PetDetailsScreenContent(
-            uiState = PetDetailsUiState(pet = samplePet, isLoading = false),
-            navController = rememberNavController(),
-            sampleMedicalRecords = emptyList(),
-            sampleSchedules = emptyList()
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "PetDetailsScreen Loading")
-@Composable
-fun PetDetailsScreenLoadingPreview() {
-    FurrEverCareTheme {
-        PetDetailsScreenContent(
-            uiState = PetDetailsUiState(isLoading = true),
-            navController = rememberNavController(),
-            sampleMedicalRecords = emptyList(),
-            sampleSchedules = emptyList()
-        )
     }
 }

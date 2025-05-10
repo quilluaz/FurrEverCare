@@ -1,17 +1,16 @@
 package com.jis_citu.furrevercare.ui.resource.viewmodel // Or your preferred ViewModel package
 
+import android.util.Log // Using standard Android Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jis_citu.furrevercare.data.api.ApiService
+import com.jis_citu.furrevercare.data.AuthRepository // Using your AuthRepository
+import com.jis_citu.furrevercare.network.ApiService // Using your ApiService
 import com.jis_citu.furrevercare.model.resources.ResourceItem
-import com.jis_citu.furrevercare.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 data class ResourceListUiState(
@@ -24,49 +23,73 @@ data class ResourceListUiState(
 @HiltViewModel
 class ResourceListViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository // Using your AuthRepository class
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ResourceListUiState())
     val uiState: StateFlow<ResourceListUiState> = _uiState.asStateFlow()
 
+    companion object {
+        private const val TAG = "ResourceListViewModel" // Tag for logging
+    }
+
     init {
-        loadResources()
+        val currentUserId = authRepository.getCurrentUserId()
+        if (currentUserId != null) {
+            _uiState.value = _uiState.value.copy(currentUserId = currentUserId)
+            loadResources()
+        } else {
+            _uiState.value = ResourceListUiState(
+                errorMessage = "User not logged in.",
+                isLoading = false
+            )
+            Log.w(TAG, "User not logged in at init.")
+        }
     }
 
     fun loadResources() {
+        val userId = authRepository.getCurrentUserId() // Get userId again, in case it changed or for retry
+        if (userId == null) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = "User not authenticated. Please log in again."
+            )
+            Log.e(TAG, "User ID is null. Cannot load resources.")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
-                val user = authRepository.getCurrentUser().firstOrNull()
-                val token = authRepository.getUserToken().firstOrNull()
+                // The custom JWT is expected to be added by AuthInterceptor
+                Log.d(TAG, "Fetching resources for user ID: $userId")
+                val response = apiService.getAllResources(userId = userId) // Correct function name
 
-                if (user != null && token != null) {
-                    _uiState.value = _uiState.value.copy(currentUserId = user.uid)
-                    // Assuming your ApiService is set up to automatically include the JWT
-                    val fetchedResources = apiService.getUserResources(userId = user.uid)
+                if (response.isSuccessful) {
+                    val fetchedResources = response.body() ?: emptyList()
                     _uiState.value = _uiState.value.copy(
                         resources = fetchedResources,
                         isLoading = false
                     )
+                    Log.i(TAG, "Successfully fetched ${fetchedResources.size} resources.")
                 } else {
+                    val errorBody = response.errorBody()?.string() ?: "Unknown error from server"
+                    Log.e(TAG, "Error loading resources: ${response.code()} - $errorBody")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "User not authenticated. Please log in again."
+                        errorMessage = "Error ${response.code()}: $errorBody"
                     )
-                    Timber.e("User not authenticated or token missing.")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error loading resources")
+                Log.e(TAG, "Exception when loading resources", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Failed to load resources: ${e.localizedMessage ?: "Unknown error"}"
+                    errorMessage = "Failed to load resources: ${e.localizedMessage ?: "Unknown exception"}"
                 )
             }
         }
     }
 
-    // Optional: A function to clear error messages if you want to dismiss them from UI
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }

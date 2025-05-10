@@ -87,23 +87,28 @@ fun AppNavGraph(
             Text("Placeholder: Medical Record List for Pet $petId")
         }
 
-        // Add routes for Resource Screens, Add/Edit Tasks, Plans, Records etc. when implemented
-        // Example structure for a route requiring arguments:
-        /*
+        // --- Pet Resource Directory ---
         composable(
-            route = Routes.ADD_EDIT_SCHEDULED_TASK + "/{petId}?taskId={taskId}",
+            route = Routes.ADD_EDIT_RESOURCE + "?resourceId={resourceId}",
             arguments = listOf(
-                navArgument("petId") { type = NavType.StringType },
-                navArgument("taskId") { type = NavType.StringType; nullable = true }
+                navArgument("resourceId") {
+                    type = NavType.StringType
+                    nullable = true // null for "add", non-null for "edit"
+                }
             )
         ) { backStackEntry ->
-             val petId = backStackEntry.arguments?.getString("petId")
-             requireNotNull(petId)
-             val taskId = backStackEntry.arguments?.getString("taskId")
-             // AddEditScheduledTaskScreen(navController = navController, petId = petId, taskId = taskId)
-             Text("Placeholder: Add/Edit Task Screen for pet $petId, task $taskId") // Placeholder
+            val resourceId = backStackEntry.arguments?.getString("resourceId")
+            Text("Placeholder: Add/Edit Resource Screen (ID: $resourceId)")
         }
-        */
+
+        composable(
+            route = "${Routes.RESOURCE_DETAILS}/{resourceId}",
+            arguments = listOf(navArgument("resourceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val resourceId = backStackEntry.arguments?.getString("resourceId")
+            requireNotNull(resourceId) { "Resource ID cannot be null for details screen" }
+            Text("Placeholder: Resource Details Screen for ID: $resourceId")
+        }
 
     }
 }

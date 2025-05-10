@@ -3,7 +3,7 @@ package com.jis_citu.furrevercare.ui.home
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Folder // Resource Icon
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Person
@@ -22,32 +22,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview // Added for Preview
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController // Added for Preview
+import androidx.navigation.compose.rememberNavController
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
-// Removed direct import of PrimaryGreen as we'll use MaterialTheme.colorScheme.primary
-import com.jis_citu.furrevercare.ui.profile.ProfileScreen
-import com.jis_citu.furrevercare.ui.pet.PetListScreen
-import com.jis_citu.furrevercare.ui.resource.ResourceListScreen
-// Make sure HomeScreen is imported if it's in a different sub-package of ui.home,
-// or if MainScreen.kt is in a different package than HomeScreen.kt
-// Assuming HomeScreen.kt is in the same package: com.jis_citu.furrevercare.ui.home
+import com.jis_citu.furrevercare.ui.profile.ProfileScreen // Assuming this is your ProfileScreen composable
+import com.jis_citu.furrevercare.ui.pet.PetListScreen    // Assuming this is your PetListScreen composable
+import com.jis_citu.furrevercare.ui.resource.ResourceListScreen // Import ResourceListScreen
+
 
 data class BottomNavItem(
     val name: String,
-    val route: String,
+    val route: String, // This route is mainly for identification and potential future NavHost use
     val icon: ImageVector
 )
 
 @Composable
-fun MainScreen(navController: NavController) {
+fun MainScreen(navController: NavController) { // This is the NavController from AppNavGraph
     val bottomNavItems = listOf(
         BottomNavItem("Home", Routes.HOME, Icons.Default.Home),
         BottomNavItem("Pets", Routes.PET_LIST, Icons.Default.Pets),
-        BottomNavItem("Resources", Routes.RESOURCE_LIST, Icons.Default.Folder),
+        BottomNavItem("Resources", Routes.RESOURCE_LIST, Icons.Default.Folder), // Using new route
         BottomNavItem("Profile", Routes.PROFILE, Icons.Default.Person)
     )
 
@@ -56,7 +53,7 @@ fun MainScreen(navController: NavController) {
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface, // Or surfaceColorAtElevation for a slight tint
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 bottomNavItems.forEachIndexed { index, item ->
@@ -64,13 +61,10 @@ fun MainScreen(navController: NavController) {
                         selected = selectedItemIndex == index,
                         onClick = {
                             selectedItemIndex = index
-                            // NOTE: This current setup swaps composables directly
-                            // based on selectedItemIndex. It does NOT use NavController
-                            // to navigate between Home, Pets, Resources, Profile.
-                            // If you intend to use true navigation for bottom tabs
-                            // (e.g., for separate back stacks per tab), you'd use
-                            // an inner NavHost here and navigate with navController.navigate(item.route).
-                            // For now, this direct composable swapping is fine.
+                            // This setup switches composables directly.
+                            // It does not use the NavController for these main tab switches.
+                            // If you wanted true navigation between bottom tabs (for backstacks per tab),
+                            // you'd typically use an inner NavHost here.
                         },
                         icon = {
                             Icon(
@@ -82,7 +76,7 @@ fun MainScreen(navController: NavController) {
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp), // This is good
+                            indicatorColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -93,19 +87,11 @@ fun MainScreen(navController: NavController) {
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedItemIndex) {
-                0 -> HomeScreen(navController) // navController from AppNavGraph is passed
-                1 -> PetListScreen(navController) // Pass the same navController
-                2 -> ResourceListScreen(/* navController = navController */) // Pass navController if ResourceListScreen needs it
-                3 -> ProfileScreen(navController)  // Pass the same navController
+                0 -> HomeScreen(navController) // Pass the main NavController
+                1 -> PetListScreen(navController) // Pass the main NavController
+                2 -> ResourceListScreen(navController) // Pass the main NavController
+                3 -> ProfileScreen(navController)  // Pass the main NavController
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    FurrEverCareTheme {
-        MainScreen(rememberNavController())
     }
 }

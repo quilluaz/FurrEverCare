@@ -32,8 +32,8 @@ export default function TreatmentPlans() {
 
   const user = AuthService.getUser();
   const userID = user?.userId || null;
-  //const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
-  const API_BASE_URL = "http://localhost:8080/api/users";
+  const API_BASE_URL = "https://furrevercare-deploy-13.onrender.com/api/users";
+ // const API_BASE_URL = "http://localhost:8080/api/users";
   
   // Get initial petID from URL query parameter (optional, can be overridden by dropdown)
   const urlParams = new URLSearchParams(window.location.search);

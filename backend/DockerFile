@@ -9,8 +9,10 @@ COPY ./.mvn ./.mvn
 COPY ./pom.xml .
 
 # Download dependencies using the wrapper
-RUN chmod +x ./mvnw
 RUN ./mvnw dependency:go-offline -B
+
+# Copy the service account key file into the image's /app directory
+COPY backend/src/main/resources/serviceAccountKey.json ./serviceAccountKey.json
 
 # Copy the rest of the source code
 COPY ./src ./src

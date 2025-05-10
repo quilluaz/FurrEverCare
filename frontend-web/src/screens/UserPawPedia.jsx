@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import UserNavBar from "../components/UserNavBar";
 import WelcomeMessageModal from "../components/WelcomeMessageModal";
-import AIModal from "../components/AIModal";
+
 import pawpedia from "../assets/pawpedia.png";
 
 export default function UserPawPedia() {
@@ -331,7 +331,7 @@ export default function UserPawPedia() {
       </div>
 
       {/* AI Modal */}
-      <AIModal />
+  
 
       <style
         dangerouslySetInnerHTML={{

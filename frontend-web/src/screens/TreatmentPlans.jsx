@@ -551,19 +551,6 @@ export default function TreatmentPlans() {
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${plan.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : plan.status === 'ACTIVE' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500'}`}>{plan.status === 'COMPLETED' ? <span>✔️</span> : plan.status === 'ACTIVE' ? <span>⏳</span> : <span>⛔</span>}{plan.status || 'N/A'}</span>
                     {plan.goal && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><span>🎯</span>{plan.goal}</span>}
                   </div>
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-xs font-medium mb-1">
-                      <span>Progress</span>
-                      <span>{plan.progressPercentage !== undefined ? `${plan.progressPercentage}%` : "N/A"}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-[#68D391] to-[#EA6C7B]"
-                        style={{ width: `${plan.progressPercentage || 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
                   {/* Details */}
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-600 mb-2">
                     <div>

@@ -269,7 +269,7 @@ const LogInModal = ({ onClose, previousRoute }) => {
           </button>
 
           <div style={styles.signupText}>
-            Don't have an Account? 
+            Don't have an Account?&nbsp;
             <span 
               style={styles.signupLink} 
               onClick={() => {

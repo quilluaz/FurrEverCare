@@ -13,7 +13,7 @@ export default function AddTreatmentPlanModal({
   const [formData, setFormData] = useState({ // Initial state
     name: "", description: "", startDate: "", endDate: "",
     goal: "",
-    status: "ACTIVE", progressPercentage: "", notes: "", // Initialize progressPercentage as empty string
+    status: "ACTIVE", notes: "", // Removed progressPercentage
   });
   const [isLoading, setIsLoading] = useState(false); // Optional loading state
   const [error, setError] = useState(null); // Optional error state
@@ -58,12 +58,10 @@ export default function AddTreatmentPlanModal({
         name: plan.name || "",
         description: plan.description || "",
         startDate: formattedStartDate,
-        endDate: formattedEndDate, // Set endDate
+        endDate: formattedEndDate,
         goal: plan.goal || "",
         status: plan.status || "ACTIVE",
-        progressPercentage: plan.progressPercentage || 0,
         notes: plan.notes || "",
-        // planID is not part of the form data itself
       });
       setError(null); // Reset error on open/plan change
     } else if (!isEditMode) {
@@ -71,7 +69,7 @@ export default function AddTreatmentPlanModal({
       setFormData({
         name: "", description: "", startDate: "", endDate: "",
         goal: "",
-        status: "ACTIVE", progressPercentage: 0, notes: "",
+        status: "ACTIVE", notes: "",
       });
       setError(null);
     }
@@ -127,13 +125,10 @@ export default function AddTreatmentPlanModal({
       name: formData.name,
       description: formData.description,
       startDate: startDateObj ? startDateObj.toISOString() : null,
-      endDate: endDateObj ? endDateObj.toISOString() : null, // Add endDate to payload
+      endDate: endDateObj ? endDateObj.toISOString() : null,
       goal: formData.goal,
       status: formData.status,
-      progressPercentage: formData.progressPercentage,
       notes: formData.notes,
-      // DO NOT include userID, petID, or planID here unless your backend specifically
-      // requires them in the PUT request body (they are usually in the URL).
     };
 
     console.log("AddTreatmentPlanModal: Submitting data:", planDataToSend); // Log the data being sent
@@ -202,12 +197,12 @@ export default function AddTreatmentPlanModal({
             {/* Start Date */}
             <div>
               <label className="block text-sm text-[#042C3C] mb-1">Start Date</label>
-              <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" required disabled={isLoading} />
+              <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:opacity-60" required disabled={isLoading} />
             </div>
             {/* End Date */}
             <div>
               <label className="block text-sm text-[#042C3C] mb-1">End Date</label>
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" disabled={isLoading} />
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:opacity-60" disabled={isLoading} />
             </div>
             {/* Goal */}
             <div>
@@ -222,11 +217,6 @@ export default function AddTreatmentPlanModal({
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
-            </div>
-            {/* Progress */}
-            <div>
-              <label className="block text-sm text-[#042C3C] mb-1">Progress (%)</label>
-              <input type="number" name="progressPercentage" value={formData.progressPercentage} onChange={handleChange} min="0" max="100" className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" disabled={isLoading} />
             </div>
             {/* Notes */}
             <div>

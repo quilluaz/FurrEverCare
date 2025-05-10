@@ -1,7 +1,7 @@
 import GuestNavBar from "../components/GuestNavBar";
 import pawpedia from "../assets/pawpedia.png";
 import { useState, useEffect } from "react";
-import AIModal from "../components/AIModal";
+
 
 
 export default function PawPedia() {
@@ -326,7 +326,7 @@ export default function PawPedia() {
         </div>
       </div>
 
-      <AIModal />
+     
     </div>
   );
 }

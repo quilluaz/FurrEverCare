@@ -5,7 +5,9 @@ import com.jis_citu.furrevercare.model.MedicalRecord
 import com.jis_citu.furrevercare.model.Pet
 import com.jis_citu.furrevercare.model.ScheduledTask
 import com.jis_citu.furrevercare.model.TreatmentPlan
-import com.jis_citu.furrevercare.model.User
+import com.jis_citu.furrevercare.model.User // Your User model
+import com.jis_citu.furrevercare.network.dto.BackendAuthResponse // Corrected DTO
+import com.jis_citu.furrevercare.network.dto.FirebaseIdTokenRequest // DTO for request
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -13,12 +15,25 @@ import retrofit2.http.*
 
 interface ApiService {
 
+    //region Authentication Endpoints
+    /**
+     * Exchanges a Firebase ID token for a custom backend JWT and user profile.
+     * This should match the endpoint in your AuthController.java that handles
+     * Firebase ID token verification and custom token generation (e.g., /api/auth/google-auth
+     * or a new, more general /api/auth/firebase-signin).
+     */
+    @POST("api/auth/google-auth") // <<< VERIFY THIS PATH with your backend setup
+    suspend fun exchangeFirebaseToken(
+        @Body request: FirebaseIdTokenRequest
+    ): Response<BackendAuthResponse> // <<< Uses your User model via BackendAuthResponse
+    //endregion
+
     // --- User Endpoints ---
     @GET("api/users/{userId}")
     suspend fun getUser(@Path("userId") userId: String): Response<User>
 
     @POST("api/users")
-    suspend fun createUserProfile(@Body user: User): Response<String>
+    suspend fun createUserProfile(@Body user: User): Response<String> // Might also need auth
 
     @PUT("api/users/profile")
     suspend fun updateUserProfile(@Body user: User): Response<String>
@@ -28,9 +43,9 @@ interface ApiService {
     @POST("api/users/{userId}/pets")
     suspend fun addPet(
         @Path("userId") userId: String,
-        @Part("pet") pet: RequestBody, // Pet data as JSON RequestBody
+        @Part("pet") pet: RequestBody,
         @Part image: MultipartBody.Part?
-    ): Response<String> // Backend returns message/ID
+    ): Response<String>
 
     @GET("api/users/{userId}/pets")
     suspend fun getUserPets(@Path("userId") userId: String): Response<List<Pet>>
@@ -46,9 +61,9 @@ interface ApiService {
     suspend fun updatePet(
         @Path("userId") userId: String,
         @Path("petId") petId: String,
-        @Part("pet") pet: RequestBody, // Pet data as JSON RequestBody
+        @Part("pet") pet: RequestBody,
         @Part image: MultipartBody.Part?
-    ): Response<String> // Backend returns message
+    ): Response<String>
 
     @DELETE("api/users/{userId}/pets/{petId}")
     suspend fun deletePet(
@@ -66,7 +81,7 @@ interface ApiService {
     @GET("api/users/{userId}/pets/{petId}/emergencyProfile")
     suspend fun getEmergencyProfile(
         @Path("userId") userId: String, @Path("petId") petId: String
-    ): Response<EmergencyProfile> // Returns the single profile
+    ): Response<EmergencyProfile>
 
     @PUT("api/users/{userId}/pets/{petId}/emergencyProfile")
     suspend fun updateEmergencyProfile(
@@ -84,14 +99,14 @@ interface ApiService {
     suspend fun addScheduledTask(
         @Path("userId") userId: String, @Path("petId") petId: String,
         @Body task: ScheduledTask
-    ): Response<String> // Returns taskID
+    ): Response<String>
 
     @GET("api/users/{userId}/pets/{petId}/scheduledTasks")
     suspend fun getScheduledTasks(
         @Path("userId") userId: String, @Path("petId") petId: String,
-        @Query("date") date: String? = null, // Format "YYYY-MM-DD"
-        @Query("startDate") startDate: String? = null, // Format "YYYY-MM-DDTHH:mm:ssZ" ISO 8601 UTC
-        @Query("endDate") endDate: String? = null // Format "YYYY-MM-DDTHH:mm:ssZ" ISO 8601 UTC
+        @Query("date") date: String? = null,
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null
     ): Response<List<ScheduledTask>>
 
     @GET("api/users/{userId}/pets/{petId}/scheduledTasks/upcoming")
@@ -114,7 +129,7 @@ interface ApiService {
     @PATCH("api/users/{userId}/pets/{petId}/scheduledTasks/{taskId}/status")
     suspend fun updateScheduledTaskStatus(
         @Path("userId") userId: String, @Path("petId") petId: String, @Path("taskId") taskId: String,
-        @Query("status") status: String // Backend TaskStatus enum name (e.g., "COMPLETED")
+        @Query("status") status: String
     ): Response<String>
 
     @DELETE("api/users/{userId}/pets/{petId}/scheduledTasks/{taskId}")
@@ -127,12 +142,12 @@ interface ApiService {
     suspend fun addTreatmentPlan(
         @Path("userId") userId: String, @Path("petId") petId: String,
         @Body plan: TreatmentPlan
-    ): Response<String> // Returns planID
+    ): Response<String>
 
     @GET("api/users/{userId}/pets/{petId}/treatmentPlans")
     suspend fun getTreatmentPlans(
         @Path("userId") userId: String, @Path("petId") petId: String,
-        @Query("status") status: String? = null // Backend PlanStatus enum name (e.g., "ACTIVE")
+        @Query("status") status: String? = null
     ): Response<List<TreatmentPlan>>
 
     @GET("api/users/{userId}/pets/{petId}/treatmentPlans/{planId}")
@@ -149,7 +164,7 @@ interface ApiService {
     @PATCH("api/users/{userId}/pets/{petId}/treatmentPlans/{planId}/progress")
     suspend fun updatePlanProgress(
         @Path("userId") userId: String, @Path("petId") petId: String, @Path("planId") planId: String,
-        @Body progressPayload: Map<String, Int> // Send as {"progress": value}
+        @Body progressPayload: Map<String, Int>
     ): Response<String>
 
     @DELETE("api/users/{userId}/pets/{petId}/treatmentPlans/{planId}")
@@ -157,12 +172,12 @@ interface ApiService {
         @Path("userId") userId: String, @Path("petId") petId: String, @Path("planId") planId: String
     ): Response<String>
 
-    // --- Medical Record Endpoints --- (Based on MedicalRecordService)
+    // --- Medical Record Endpoints ---
     @POST("api/users/{userId}/pets/{petId}/medicalRecords")
     suspend fun addMedicalRecord(
         @Path("userId") userId: String, @Path("petId") petId: String,
         @Body record: MedicalRecord
-    ): Response<String> // Returns recordID
+    ): Response<String>
 
     @GET("api/users/{userId}/pets/{petId}/medicalRecords")
     suspend fun getMedicalRecords(
@@ -181,5 +196,4 @@ interface ApiService {
         @Path("petId") petId: String,
         @Path("recordId") recordId: String
     ): Response<String>
-
 }

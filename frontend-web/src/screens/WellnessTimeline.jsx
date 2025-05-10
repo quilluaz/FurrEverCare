@@ -887,31 +887,14 @@ function WellnessTimeline() {
 
           {/* Sidebar */}
           <div style={styles.sidebar}>
-            {/* Overall Progress */}
+            {/* Dashboard */}
             <div className="relative bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6 transition-transform duration-200 hover:scale-[1.015] hover:shadow-xl">
               {/* Accent Bar */}
               <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-[#EA6C7B] to-[#68D391]" />
               <div className="p-6">
                 <h2 className="text-lg font-bold text-[#042C3C] mb-4 flex items-center gap-2">
-                  <span>📈</span> Overall Progress
+                  <span>📊</span> Dashboard
                 </h2>
-                <div className="mb-6">
-                  <div className="flex justify-between text-xs font-medium mb-1">
-                    <span>Daily plan</span>
-                    <span>{timelineEvents.length > 0 
-                      ? `${Math.round(timelineEvents.reduce((acc, event) => acc + (event.progress || 0), 0) / timelineEvents.length)}%`
-                      : "0%"}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-[#EA6C7B] to-[#68D391]"
-                      style={{ width: timelineEvents.length > 0 
-                        ? `${Math.round(timelineEvents.reduce((acc, event) => acc + (event.progress || 0), 0) / timelineEvents.length)}%`
-                        : "0%" }}
-                    ></div>
-                  </div>
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col items-center">
                     <span className="text-2xl font-bold text-[#042C3C]">{timelineEvents.length}</span>

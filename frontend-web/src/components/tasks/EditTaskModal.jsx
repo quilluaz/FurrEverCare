@@ -212,7 +212,7 @@ export default function EditTaskModal({ isOpen, onClose, onSubmit, task, petId, 
               onChange={handleChange}
               required
               disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[#EA6C7B] focus:border-[#EA6C7B] text-sm text-gray-700"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[#EA6C7B] focus:border-[#EA6C7B] text-sm text-gray-700 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:opacity-60"
             />
           </div>
           <div>

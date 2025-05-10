@@ -8,16 +8,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items // Import for LazyColumn items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos // <<< Moved Import
+import androidx.compose.material.icons.automirrored.filled.EventNote // For Schedules
+import androidx.compose.material.icons.automirrored.filled.FactCheck // For Medical Records
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MedicalServices // Icon for Medical Records
-import androidx.compose.material.icons.filled.Event // Icon for Schedules
-import androidx.compose.material.icons.filled.Warning // Icon for Emergency Profile
+import androidx.compose.material.icons.filled.Female // For Gender
+import androidx.compose.material.icons.filled.Male // For Gender
+import androidx.compose.material.icons.filled.MonitorHeart // For Emergency Profile
+import androidx.compose.material.icons.filled.Pets // Placeholder if image is null
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,24 +28,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext // Keep if needed, though not directly used here
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController // Keep for Preview
+import androidx.navigation.compose.rememberNavController
 import com.jis_citu.furrevercare.R
-import com.jis_citu.furrevercare.model.Pet // Import the actual Pet model
+import com.jis_citu.furrevercare.model.Pet
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
-import com.jis_citu.furrevercare.theme.PrimaryGreen
+// Removed com.jis_citu.furrevercare.theme.PrimaryGreen as we'll use MaterialTheme.colorScheme
 import com.jis_citu.furrevercare.ui.pet.viewmodel.PetDetailsViewModel
+import com.jis_citu.furrevercare.ui.pet.viewmodel.PetDetailsUiState // For preview
+import java.util.Locale // For capitalizing gender
 
-// Sample data classes (if still needed for previews or initial setup)
+// Sample data classes from your file (keep for now if used in VM or previews)
 data class MedicalRecord(
     val id: String,
     val title: String,
@@ -64,12 +71,8 @@ fun PetDetailsScreen(
     viewModel: PetDetailsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val pet = uiState.pet
-    val petImageBitmap = uiState.petImage
 
-    // Sample data - replace with actual data from ViewModel when ready
-    // val medicalRecords = uiState.medicalRecords
-    // val schedules = uiState.schedules
+    // Sample data - TODO: Replace with actual data from ViewModel uiState.medicalRecords, uiState.schedules
     val medicalRecords = remember {
         listOf(
             MedicalRecord("1", "Annual Checkup", "Jan 15, 2023", "Regular annual checkup. All vitals normal."),
@@ -83,20 +86,47 @@ fun PetDetailsScreen(
         )
     }
 
+    PetDetailsScreenContent(
+        uiState = uiState,
+        navController = navController,
+        sampleMedicalRecords = medicalRecords, // Pass sample data for now
+        sampleSchedules = schedules        // Pass sample data for now
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PetDetailsScreenContent(
+    uiState: PetDetailsUiState,
+    navController: NavController,
+    sampleMedicalRecords: List<MedicalRecord>, // Temporary for sample data
+    sampleSchedules: List<Schedule>          // Temporary for sample data
+) {
+    val pet = uiState.pet
+    val petImageBitmap = uiState.petImage
+
     FurrEverCareTheme {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Pet Details") },
+                    title = { Text(pet?.name ?: "Pet Details") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                         }
                     },
+                    actions = {
+                        pet?.let { // Show edit button only if pet data is available
+                            IconButton(onClick = { navController.navigate("${Routes.EDIT_PET}/${it.petID}") }) {
+                                Icon(Icons.Filled.Edit, "Edit Pet")
+                            }
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                        containerColor = MaterialTheme.colorScheme.surface, // Or primary
+                        titleContentColor = MaterialTheme.colorScheme.onSurface, // Or onPrimary
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface, // Or onPrimary
+                        actionIconContentColor = MaterialTheme.colorScheme.primary // Or onPrimary
                     )
                 )
             }
@@ -111,7 +141,7 @@ fun PetDetailsScreen(
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 } else if (uiState.errorMessage != null) {
                     Text(
-                        text = uiState.errorMessage ?: "An unknown error occurred.",
+                        text = uiState.errorMessage,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center).padding(16.dp),
                         textAlign = TextAlign.Center
@@ -120,90 +150,63 @@ fun PetDetailsScreen(
                     Text(
                         text = "Pet not found.",
                         modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 } else {
-                    // Pet details loaded successfully
                     LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Pet Info Card
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            PetInfoCard(pet = pet, petImageBitmap = petImageBitmap) { petId ->
-                                navController.navigate("${Routes.EDIT_PET}/$petId")
-                                Log.d("PetDetailsScreen", "Navigating to edit pet: $petId")
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
+                        item { PetHeader(pet = pet, petImageBitmap = petImageBitmap) }
 
-                        // Emergency Profile Navigation Card
+                        item { Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)) }
+
                         item {
-                            ActionCard(
-                                icon = Icons.Filled.Warning,
+                            DetailActionCard(
                                 title = "Emergency Profile",
-                                description = "View or update critical emergency information.",
+                                icon = Icons.Filled.MonitorHeart,
                                 onClick = { navController.navigate("${Routes.EMERGENCY_PROFILE}/${pet.petID}") }
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
                         }
-
-                        // Action Buttons Row
                         item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Button(
-                                    onClick = { /* TODO: Navigate to Add Medical Record Screen */ },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                                    modifier = Modifier.weight(1f).height(48.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("Add Medical Record", textAlign = TextAlign.Center)
-                                }
-
-                                Button(
-                                    onClick = { /* TODO: Navigate to Add Schedule Screen */ },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                                    modifier = Modifier.weight(1f).height(48.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("Add Schedule", textAlign = TextAlign.Center)
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(24.dp))
+                            DetailActionCard(
+                                title = "Medical Records",
+                                icon = Icons.AutoMirrored.Filled.FactCheck,
+                                onClick = { navController.navigate("${Routes.MEDICAL_RECORD_LIST}/${pet.petID}") } // TODO: Ensure this route exists and leads to actual screen
+                            )
                         }
-
-                        // Medical Records Section
-                        item { SectionHeader(title = "Medical Records") }
-                        if (medicalRecords.isEmpty()) {
-                            item { EmptyStateText("No medical records added yet.") }
-                        } else {
-                            items(medicalRecords) { record -> // Use items extension function
-                                MedicalRecordItem(record) // Call the single defined function
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
-
-                        // Upcoming Schedules Section
                         item {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            SectionHeader(title = "Upcoming Schedules")
+                            DetailActionCard(
+                                title = "Scheduled Tasks",
+                                icon = Icons.AutoMirrored.Filled.EventNote,
+                                onClick = { /* TODO: Navigate to Pet's Schedule List Screen */ }
+                            )
                         }
-                        if (schedules.isEmpty()) {
-                            item { EmptyStateText("No upcoming schedules.") }
-                        } else {
-                            items(schedules) { schedule -> // Use items extension function
-                                ScheduleItem(schedule) // Call the single defined function
-                                Spacer(modifier = Modifier.height(8.dp))
+
+                        // TODO: Integrate actual medical records and schedules from ViewModel
+                        // For now, using sample data
+                        if (sampleMedicalRecords.isNotEmpty()) {
+                            item { SectionHeader(title = "Recent Medical Records") }
+                            items(sampleMedicalRecords.take(2)) { record -> // Show a few recent ones
+                                SimpleListItem(
+                                    headlineContent = { Text(record.title, fontWeight = FontWeight.SemiBold) },
+                                    supportingContent = { Text(record.description, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                                    overlineContent = { Text(record.date) }
+                                )
                             }
                         }
 
-                        // Bottom padding
-                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                        if (sampleSchedules.isNotEmpty()) {
+                            item { SectionHeader(title = "Upcoming Schedules") }
+                            items(sampleSchedules.take(2)) { schedule ->
+                                SimpleListItem(
+                                    headlineContent = { Text(schedule.title, fontWeight = FontWeight.SemiBold) },
+                                    supportingContent = { Text("${schedule.date}, ${schedule.time}") }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -211,212 +214,212 @@ fun PetDetailsScreen(
     }
 }
 
-// --- Extracted Composables ---
-
 @Composable
-fun PetInfoCard(pet: Pet, petImageBitmap: Bitmap?, onEditClick: (String) -> Unit) { // Use actual Pet model
-    Card(
+fun PetHeader(pet: Pet, petImageBitmap: Bitmap?) {
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                // Image
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .border(1.dp, PrimaryGreen, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (petImageBitmap != null) {
-                        Image(
-                            bitmap = petImageBitmap.asImageBitmap(),
-                            contentDescription = pet.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else { // Placeholder if bitmap is null
-                        Image(
-                            painter = painterResource(id = R.drawable.logo_icon_colored), // Your placeholder
-                            contentDescription = "Placeholder",
-                            modifier = Modifier.size(40.dp),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (petImageBitmap != null) {
+                Image(
+                    bitmap = petImageBitmap.asImageBitmap(),
+                    contentDescription = pet.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Pets,
+                    contentDescription = "Default Pet Image",
+                    modifier = Modifier.size(60.dp),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = pet.name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            text = "${pet.breed} (${pet.species})",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                // Details Column
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(pet.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Text("${pet.breed} (${pet.species})", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Text("Age: ${pet.age}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text("Weight: ${pet.weight} kg", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        // Display Gender too
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text("Gender: ${pet.gender}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    pet.allergies?.let { allergies ->
-                        if(allergies.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("Allergies: ${allergies.joinToString()}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
-
-                // Edit Button
-                IconButton(
-                    onClick = { onEditClick(pet.petID) },
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryGreen)
-                ) {
-                    Icon(Icons.Default.Edit, "Edit Pet", tint = Color.White)
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            InfoChip(label = "Age", value = "${pet.age} yrs")
+            InfoChip(label = "Weight", value = "${pet.weight} kg")
+            InfoChip(
+                label = "Gender",
+                value = pet.gender.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                icon = if (pet.gender.equals("Male", ignoreCase = true)) Icons.Filled.Male else Icons.Filled.Female,
+                iconTint = if (pet.gender.equals("Male", ignoreCase = true)) Color(0xFF4C89F0) else Color(0xFFF06292) // Example colors
+            )
+        }
+        pet.allergies?.let { allergies ->
+            if (allergies.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "Allergies: ${allergies.joinToString(", ")}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 }
 
 @Composable
-fun ActionCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, description: String, onClick: () -> Unit) {
+fun InfoChip(label: String, value: String, icon: ImageVector? = null, iconTint: Color = MaterialTheme.colorScheme.primary) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 4.dp)) {
+        if (icon != null) {
+            Icon(imageVector = icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun DetailActionCard(
+    title: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp), // Increased vertical padding
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = PrimaryGreen,
-                modifier = Modifier.size(40.dp)
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp) // Slightly larger icon
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium, // More prominent title
+                    fontWeight = FontWeight.SemiBold, // Bolder
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Go", tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
         }
     }
 }
 
 @Composable
-fun SectionHeader(title: String) {
+fun SectionHeader(title: String) { // Re-defined here, or ensure it's in a common place
     Text(
         text = title,
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.titleMedium, // Adjusted for consistency
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp),
+        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp), // Consistent spacing
         color = MaterialTheme.colorScheme.onBackground
     )
 }
 
 @Composable
-fun EmptyStateText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-        textAlign = TextAlign.Center
-    )
-}
-
-
-// --- Item Composables (KEEP ONLY ONE DEFINITION OF EACH) ---
-
-@Composable
-fun MedicalRecordItem(record: MedicalRecord) { // <<< Keep this one
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+fun SimpleListItem(
+    headlineContent: @Composable () -> Unit,
+    supportingContent: (@Composable () -> Unit)? = null,
+    overlineContent: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = record.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = record.date,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = record.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        overlineContent?.invoke()
+        headlineContent()
+        supportingContent?.invoke()
     }
 }
 
-// Duplicate MedicalRecordItem function was removed
 
+// --- Previews ---
+@Preview(showBackground = true, name = "PetDetailsScreen Light")
 @Composable
-fun ScheduleItem(schedule: Schedule) { // <<< Keep this one
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryGreen.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                // Simple placeholder for date/month
-                Text(
-                    text = schedule.date.split(" ").firstOrNull()?.take(3)?.uppercase() ?: "N/A", // Attempt to get first 3 letters of month
-                    style = MaterialTheme.typography.bodyLarge, // Adjusted style
-                    color = PrimaryGreen,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = schedule.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${schedule.date}, ${schedule.time}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-        }
+fun PetDetailsScreenPreviewLight() {
+    val samplePet = Pet(petID = "1", name = "Buddy", species = "Dog", breed = "Golden Retriever", age = 3, gender = "Male", weight = 28.5, allergies = listOf("Peanuts", "Dust Mites"), imageBase64 = null)
+    FurrEverCareTheme(darkTheme = false) {
+        PetDetailsScreenContent(
+            uiState = PetDetailsUiState(pet = samplePet, isLoading = false),
+            navController = rememberNavController(),
+            sampleMedicalRecords = listOf(MedicalRecord("1", "Annual Vax", "2024-03-10", "All shots up to date.")),
+            sampleSchedules = listOf(Schedule("s1", "Grooming", "2024-05-15", "02:00 PM"))
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "PetDetailsScreen Dark")
+@Composable
+fun PetDetailsScreenPreviewDark() {
+    val samplePet = Pet(petID = "1", name = "Whiskers", species = "Cat", breed = "Siamese", age = 2, gender = "Female", weight = 4.2, imageBase64 = null)
+    FurrEverCareTheme(darkTheme = true) {
+        PetDetailsScreenContent(
+            uiState = PetDetailsUiState(pet = samplePet, isLoading = false),
+            navController = rememberNavController(),
+            sampleMedicalRecords = emptyList(),
+            sampleSchedules = emptyList()
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "PetDetailsScreen Loading")
+@Composable
+fun PetDetailsScreenLoadingPreview() {
+    FurrEverCareTheme {
+        PetDetailsScreenContent(
+            uiState = PetDetailsUiState(isLoading = true),
+            navController = rememberNavController(),
+            sampleMedicalRecords = emptyList(),
+            sampleSchedules = emptyList()
+        )
     }
 }

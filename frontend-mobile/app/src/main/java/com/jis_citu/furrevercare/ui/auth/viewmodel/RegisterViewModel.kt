@@ -7,27 +7,29 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.jis_citu.furrevercare.model.User
-import com.jis_citu.furrevercare.navigation.Routes // Keep if needed for events
+import com.jis_citu.furrevercare.model.User // Your User model
 import com.jis_citu.furrevercare.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 data class RegisterUiState(
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
-    val firstName: String = "",
-    val lastName: String = "",
+    val fullName: String = "", // Changed from firstName, lastName
+    // val phone: String = "", // If you collect phone during registration, add it here
     val currentStep: Int = 1,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isEmailValid: Boolean = false,
     val isPasswordValid: Boolean = false,
     val doPasswordsMatch: Boolean = true,
-    val isNameValid: Boolean = false
+    val isFullNameValid: Boolean = false // Changed from isNameValid
+    // val isPhoneValid: Boolean = false
 )
 
 sealed class RegisterNavigationEvent {
@@ -47,14 +49,15 @@ class RegisterViewModel @Inject constructor(
     private val _navigationEvent = MutableSharedFlow<RegisterNavigationEvent>()
     val navigationEvent: SharedFlow<RegisterNavigationEvent> = _navigationEvent.asSharedFlow()
 
-    private val totalSteps = 3
+    private val totalSteps = 3 // 1=Email, 2=Password, 3=Name (now Full Name)
 
     fun updateEmail(newEmail: String) {
         val trimmedEmail = newEmail.trim()
         _uiState.update {
             it.copy(
                 email = trimmedEmail,
-                isEmailValid = trimmedEmail.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()
+                isEmailValid = trimmedEmail.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches(),
+                errorMessage = null
             )
         }
     }
@@ -64,7 +67,8 @@ class RegisterViewModel @Inject constructor(
             it.copy(
                 password = newPassword,
                 isPasswordValid = newPassword.length >= 8,
-                doPasswordsMatch = newPassword == it.confirmPassword
+                doPasswordsMatch = newPassword == it.confirmPassword,
+                errorMessage = null
             )
         }
     }
@@ -73,30 +77,24 @@ class RegisterViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 confirmPassword = newConfirmPassword,
-                doPasswordsMatch = it.password == newConfirmPassword
+                doPasswordsMatch = it.password == newConfirmPassword,
+                errorMessage = null
             )
         }
     }
 
-    fun updateFirstName(newFirstName: String) {
-        val trimmed = newFirstName.trimStart()
+    fun updateFullName(newFullName: String) { // Changed from updateFirstName/LastName
+        val trimmed = newFullName.trimStart() // Trim only start to allow spaces in middle
         _uiState.update {
             it.copy(
-                firstName = trimmed,
-                isNameValid = trimmed.isNotBlank() && it.lastName.isNotBlank()
+                fullName = trimmed,
+                isFullNameValid = trimmed.isNotBlank() && trimmed.length >= 2, // Example validation
+                errorMessage = null
             )
         }
     }
 
-    fun updateLastName(newLastName: String) {
-        val trimmed = newLastName.trimStart()
-        _uiState.update {
-            it.copy(
-                lastName = trimmed,
-                isNameValid = it.firstName.isNotBlank() && trimmed.isNotBlank()
-            )
-        }
-    }
+    // fun updatePhone(newPhone: String) { ... } // Keep if you add phone to registration
 
     fun nextStep() {
         if (_uiState.value.currentStep < totalSteps) {
@@ -112,10 +110,14 @@ class RegisterViewModel @Inject constructor(
 
     fun registerUser() {
         val currentState = _uiState.value
-        if (currentState.isLoading || !currentState.isNameValid) return // Basic validation
+        if (!currentState.isEmailValid || !currentState.isPasswordValid || !currentState.doPasswordsMatch || !currentState.isFullNameValid) {
+            _uiState.update { it.copy(errorMessage = "Please correct the errors above.") }
+            return
+        }
+        if (currentState.isLoading) return
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        Log.d("RegisterViewModel", "Attempting registration for: ${currentState.email}")
+        Log.d("RegisterViewModel", "Attempting Firebase registration for: ${currentState.email}")
 
         auth.createUserWithEmailAndPassword(currentState.email, currentState.password)
             .addOnCompleteListener { task ->
@@ -126,50 +128,64 @@ class RegisterViewModel @Inject constructor(
                         createBackendProfile(firebaseUser.uid, currentState)
                     } else {
                         handleRegistrationError("Registration failed: Firebase user is null after creation.")
-                        Log.e("RegisterViewModel", "Firebase user was null after task.isSuccessful")
+                        Log.e("RegisterViewModel", "Firebase user was null after task.isSuccessful for createUserWithEmailAndPassword.")
                     }
                 } else {
                     val exception = task.exception
                     val message = when (exception) {
                         is FirebaseAuthUserCollisionException -> "This email address is already registered."
-                        is FirebaseAuthWeakPasswordException -> "Password is too weak (minimum 8 characters)."
-                        else -> "Registration failed: ${exception?.localizedMessage ?: "Unknown error"}"
+                        is FirebaseAuthWeakPasswordException -> "Password is too weak (minimum 8 characters recommended)."
+                        else -> "Registration failed: ${exception?.localizedMessage ?: "Unknown Firebase error"}"
                     }
                     handleRegistrationError(message)
-                    Log.e("RegisterViewModel", "Firebase user creation failed", exception)
+                    Log.e("RegisterViewModel", "Firebase user creation failed.", exception)
                 }
             }
     }
 
-    private fun createBackendProfile(uid: String, currentState: RegisterUiState) {
-        val name = "${currentState.firstName} ${currentState.lastName}".trim()
+    private fun createBackendProfile(firebaseUid: String, currentState: RegisterUiState) {
+        // Use the single fullName field directly
         val userProfile = User(
-            userID = uid,
-            name = name,
+            userID = firebaseUid,
+            name = currentState.fullName.trim(), // Use the collected fullName
             email = currentState.email,
-            password = "",
-            phone = ""
+            phone = null // Set to currentState.phone if you collect phone during registration
         )
 
         viewModelScope.launch {
             try {
-                Log.d("RegisterViewModel", "Calling backend createUserProfile for UID: $uid")
+                Log.d("RegisterViewModel", "Calling backend createUserProfile for UID: $firebaseUid with payload: $userProfile")
                 val response = apiService.createUserProfile(userProfile)
 
                 if (response.isSuccessful) {
-                    Log.d("RegisterViewModel", "Backend profile creation successful: ${response.body()}")
+                    val responseBodyString = response.body()?.string()
+                    Log.d("RegisterViewModel", "Backend profile creation successful. Response: $responseBodyString")
                     _navigationEvent.emit(RegisterNavigationEvent.NavigateToSuccess)
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    val message = "Failed to create user profile (Code: ${response.code()}). Please try again."
-                    handleRegistrationError(message)
+                    val displayMessage = "Failed to create user profile on backend (Code: ${response.code()}). Error: ${errorBody ?: "Unknown backend error"}"
+                    handleRegistrationError(displayMessage)
                     Log.e("RegisterViewModel", "Backend profile creation failed: ${response.code()} - $errorBody")
-                    auth.currentUser?.delete()?.addOnCompleteListener { dt -> Log.w("RegisterViewModel", "Orphaned Firebase user deleted after backend failure: ${dt.isSuccessful}") }
+                    auth.currentUser?.delete()?.addOnCompleteListener { deleteTask ->
+                        Log.w("RegisterViewModel", "Orphaned Firebase user deletion attempt after backend failure. Success: ${deleteTask.isSuccessful}")
+                    }
                 }
+            } catch (e: HttpException) {
+                Log.e("RegisterViewModel", "HTTP exception during backend API call", e)
+                handleRegistrationError("Registration error (HTTP ${e.code()}): ${e.message()}")
+                auth.currentUser?.delete()?.addOnCompleteListener { deleteTask -> Log.w("RegisterViewModel", "Orphaned Firebase user deletion attempt after HTTP exception. Success: ${deleteTask.isSuccessful}") }
+            } catch (e: IOException) {
+                Log.e("RegisterViewModel", "Network exception during backend API call", e)
+                handleRegistrationError("Network error. Please check your connection and try again.")
+                auth.currentUser?.delete()?.addOnCompleteListener { deleteTask -> Log.w("RegisterViewModel", "Orphaned Firebase user deletion attempt after IO exception. Success: ${deleteTask.isSuccessful}") }
             } catch (e: Exception) {
+                Log.e("RegisterViewModel", "Generic exception during backend API call", e)
                 handleRegistrationError("An error occurred: ${e.message}")
-                Log.e("RegisterViewModel", "Backend API call exception", e)
-                auth.currentUser?.delete()?.addOnCompleteListener { dt -> Log.w("RegisterViewModel", "Orphaned Firebase user deleted after exception: ${dt.isSuccessful}") }
+                auth.currentUser?.delete()?.addOnCompleteListener { deleteTask ->
+                    Log.w("RegisterViewModel", "Orphaned Firebase user deletion attempt after generic exception. Success: ${deleteTask.isSuccessful}")
+                }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }

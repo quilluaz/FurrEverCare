@@ -151,6 +151,25 @@ export default function AddTreatmentPlanModal({
       });
   };
 
+  // Helper function for rendering checklist preview
+  function renderActionPlanPreview(notes) {
+    if (!notes) return <div className="text-gray-400 italic">No action plan.</div>;
+    return notes.split('\n').map((line, idx) => {
+      const match = line.match(/^\-\s\[( |x)\]\s(.+)$/);
+      if (match) {
+        const checked = match[1] === 'x';
+        const text = match[2];
+        return (
+          <div key={idx} className="flex items-center gap-2 mb-1">
+            <input type="checkbox" checked={checked} readOnly className="accent-[#EA6C7B] w-4 h-4" />
+            <span style={{ textDecoration: checked ? 'line-through' : 'none', color: checked ? '#9CA3AF' : '#042C3C' }}>{text}</span>
+          </div>
+        );
+      }
+      return <div key={idx} className="text-xs text-gray-500">{line}</div>;
+    });
+  }
+
   if (!isOpen) return null;
 
   // --- UI Section ---
@@ -211,8 +230,23 @@ export default function AddTreatmentPlanModal({
             </div>
             {/* Notes */}
             <div>
-              <label className="block text-sm text-[#042C3C] mb-1">Notes</label>
-              <textarea name="notes" value={formData.notes} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" rows="2" disabled={isLoading} />
+              <label className="block text-sm text-[#042C3C] mb-1">Action Plan</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500"
+                rows="4"
+                disabled={isLoading}
+                placeholder={"- [ ] Give medicine every morning\n- [x] Buy special food\n- [ ] Schedule vet visit"}
+              />
+              <div className="text-xs text-gray-500 mt-1 mb-2">
+                Use checklist format: <code>- [ ] Step</code> or <code>- [x] Done step</code>. You can check/uncheck after saving.
+              </div>
+              <div className="bg-[#FFF7EC] rounded p-2 mt-1">
+                <span className="block text-xs text-[#042C3C] mb-1 font-semibold">Preview:</span>
+                {renderActionPlanPreview(formData.notes)}
+              </div>
             </div>
           </div>
 

@@ -32,8 +32,8 @@ export default function TreatmentPlans() {
 
   const user = AuthService.getUser();
   const userID = user?.userId || null;
-  //const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api/users";
-  const API_BASE_URL = "http://localhost:8080/api/users";
+  const API_BASE_URL = "https://furrevercare-deploy-13.onrender.com/api/users";
+ // const API_BASE_URL = "http://localhost:8080/api/users";
   
   // Get initial petID from URL query parameter (optional, can be overridden by dropdown)
   const urlParams = new URLSearchParams(window.location.search);
@@ -386,6 +386,30 @@ export default function TreatmentPlans() {
     // The useEffect hook watching selectedPetId will trigger fetchPlans
   };
 
+  // Helper function to render checklist from notes
+  function renderActionPlan(notes, onToggle) {
+    if (!notes) return <div className="text-gray-400 italic">No action plan.</div>;
+    return notes.split('\n').map((line, idx) => {
+      const match = line.match(/^\-\s\[( |x)\]\s(.+)$/);
+      if (match) {
+        const checked = match[1] === 'x';
+        const text = match[2];
+        return (
+          <div key={idx} className="flex items-center gap-2 mb-1">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => onToggle(idx, checked)}
+              className="accent-[#EA6C7B] w-4 h-4"
+            />
+            <span style={{ textDecoration: checked ? 'line-through' : 'none', color: checked ? '#9CA3AF' : '#042C3C' }}>{text}</span>
+          </div>
+        );
+      }
+      return <div key={idx} className="text-xs text-gray-500">{line}</div>;
+    });
+  }
+
   return (
     <div className="w-full min-h-screen bg-[#FFF7EC] font-['Baloo'] overflow-x-hidden">
       <UserNavBar />
@@ -479,118 +503,88 @@ export default function TreatmentPlans() {
           </div>
         ) : (
           // Display plans only if not initial loading and plans exist for the selected pet
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => (
               <div
                 key={plan.planID}
-                className={`bg-white rounded-lg shadow relative overflow-hidden text-sm transition-opacity duration-300 ${
-                  isPlanLoading(plan.planID) ? "opacity-50" : "opacity-100"
-                }`}>
-                {/* ... existing plan card structure ... */}
+                className={`relative bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden text-sm transition-transform duration-200 hover:scale-[1.025] hover:shadow-xl group ${isPlanLoading(plan.planID) ? "opacity-50" : "opacity-100"}`}
+                style={{ minHeight: '270px' }}
+              >
+                {/* Accent Bar */}
+                <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-[#EA6C7B] to-[#68D391]" />
+                {/* Loader overlay */}
                 {isPlanLoading(plan.planID) && (
                   <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-10">
                     <Loader className="h-6 w-6 text-[#EA6C7B] animate-spin" />
                     <p className="mt-1 text-gray-500 text-xs">Processing...</p>
                   </div>
                 )}
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-3">
+                <div className="p-5 pb-4 flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h2 className="text-lg font-semibold text-[#042C3C] break-words">
-                        {plan.name}
-                      </h2>
-                      <p className="text-xs text-gray-500 break-words mb-1">
-                        {plan.description}
-                      </p>
+                      <h2 className="text-xl font-bold text-[#042C3C] mb-0.5 leading-tight">{plan.name}</h2>
+                      <p className="text-xs text-gray-500 mb-1 break-words">{plan.description}</p>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       <button
                         onClick={() => confirmEditPlan(plan)}
-                        disabled={
-                          !userID ||
-                          isPlanLoading(plan.planID) ||
-                          !selectedPetId
-                        } // Also disable if no pet selected
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label={`Edit ${plan.name}`}>
-                        <Edit className="h-4 w-4" />
+                        disabled={!userID || isPlanLoading(plan.planID) || !selectedPetId}
+                        className="p-2 rounded-full hover:bg-[#EA6C7B]/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Edit ${plan.name}`}
+                        title="Edit"
+                      >
+                        <Edit className="h-5 w-5 text-[#EA6C7B]" />
                       </button>
                       <button
                         onClick={() => confirmDeletePlan(plan)}
-                        disabled={
-                          !userID ||
-                          isPlanLoading(plan.planID) ||
-                          !selectedPetId
-                        } // Also disable if no pet selected
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label={`Delete ${plan.name}`}>
-                        <Trash2 className="h-4 w-4" />
+                        disabled={!userID || isPlanLoading(plan.planID) || !selectedPetId}
+                        className="p-2 rounded-full hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Delete ${plan.name}`}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-5 w-5 text-red-400" />
                       </button>
                     </div>
                   </div>
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${plan.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : plan.status === 'ACTIVE' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500'}`}>{plan.status === 'COMPLETED' ? <span>✔️</span> : plan.status === 'ACTIVE' ? <span>⏳</span> : <span>⛔</span>}{plan.status || 'N/A'}</span>
+                    {plan.goal && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"><span>🎯</span>{plan.goal}</span>}
+                  </div>
                   {/* Progress Bar */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs text-gray-600 mb-0.5">
-                        <span>Progress</span>
-                        <span>{plan.progressPercentage !== undefined ? `${plan.progressPercentage}%` : "N/A"}</span>
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs font-medium mb-1">
+                      <span>Progress</span>
+                      <span>{plan.progressPercentage !== undefined ? `${plan.progressPercentage}%` : "N/A"}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div
-                        className="bg-[#68D391] h-2 rounded-full transition-all duration-500 ease-out"
+                        className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-[#68D391] to-[#EA6C7B]"
                         style={{ width: `${plan.progressPercentage || 0}%` }}
                       ></div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                  {/* Details */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-gray-600 mb-2">
                     <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Status
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {plan.status || "N/A"}
-                      </p>
+                      <span className="font-semibold">Start:</span> {formatDate(plan.startDate)}
                     </div>
                     <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Progress
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {plan.progressPercentage !== undefined
-                          ? `${plan.progressPercentage}%`
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Goal
-                      </p>
-                      <p className="text-xs text-gray-500 break-words">
-                        {plan.goal || "None"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Start Date
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatDate(plan.startDate)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        End Date
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatDate(plan.endDate)}
-                      </p>
+                      <span className="font-semibold">End:</span> {formatDate(plan.endDate)}
                     </div>
                     <div className="col-span-2">
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Notes
-                      </p>
-                      <p className="text-xs text-gray-500 break-words">
-                        {plan.notes || "None"}
-                      </p>
+                      <span className="font-semibold">Action Plan:</span>
+                      {renderActionPlan(plan.notes, (idx, checked) => {
+                        // Toggle the checkbox in the notes string
+                        const lines = plan.notes.split('\n');
+                        lines[idx] = lines[idx].replace(
+                          /^(-\s\[)( |x)(\]\s.+)$/,
+                          (_, p1, p2, p3) => `${p1}${checked ? ' ' : 'x'}${p3}`
+                        );
+                        const newNotes = lines.join('\n');
+                        // Call your edit handler to update the plan notes (optimistic update)
+                        handleEditPlan({ ...plan, notes: newNotes });
+                      })}
                     </div>
                   </div>
                 </div>

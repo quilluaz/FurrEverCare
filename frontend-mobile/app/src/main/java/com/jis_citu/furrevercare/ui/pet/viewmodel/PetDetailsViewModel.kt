@@ -1,13 +1,13 @@
-package com.jis_citu.furrevercare.ui.pet.viewmodel // Or your preferred package
+package com.jis_citu.furrevercare.ui.pet.viewmodel
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Base64 // Use android.util.Base64 for decoding
+import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth // Needed to get current userID
+import com.google.firebase.auth.FirebaseAuth
 import com.jis_citu.furrevercare.model.Pet
 import com.jis_citu.furrevercare.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,33 +15,36 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// PetDetailsUiState (Keep your existing definition)
 data class PetDetailsUiState(
     val pet: Pet? = null,
-    val petImage: Bitmap? = null, // Decoded image
+    val petImage: Bitmap? = null,
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
-    // Add states for medical records, schedules later
 )
 
 @HiltViewModel
 class PetDetailsViewModel @Inject constructor(
     private val apiService: ApiService,
-    private val auth: FirebaseAuth, // Inject FirebaseAuth
+    private val auth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val petId: String = checkNotNull(savedStateHandle["petId"])
-    private val userId: String? = auth.currentUser?.uid // Get current user ID
+    // It's safer to get the userId within the function call that needs it,
+    // or ensure it's refreshed if the user can log out while the VM is alive.
+    // For init, this is okay.
+    private val currentUserId: String? = auth.currentUser?.uid
 
     private val _uiState = MutableStateFlow(PetDetailsUiState())
     val uiState: StateFlow<PetDetailsUiState> = _uiState.asStateFlow()
 
     init {
         loadPetDetails()
-        // TODO: Load medical records and schedules later
     }
 
     fun loadPetDetails() {
+        val userId = auth.currentUser?.uid // Re-fetch in case of user change, or use stored currentUserId
         if (userId == null) {
             _uiState.update { it.copy(isLoading = false, errorMessage = "User not logged in.") }
             return
@@ -54,12 +57,9 @@ class PetDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                // Use correct API path: /api/users/{userID}/pets/{petID}
-                // Assumes ApiService is updated with correct @GET path and parameters
                 Log.d("PetDetailsVM", "Fetching pet $petId for user $userId")
-                // *** NOTE: Ensure ApiService getPet method signature matches backend path ***
-                // It should probably be getPet(userId: String, petId: String)
-                val response = apiService.getPet(userId, petId) // Pass userId AND petId
+                // *** CORRECTED METHOD CALL HERE ***
+                val response = apiService.getPetById(userId, petId)
 
                 if (response.isSuccessful && response.body() != null) {
                     val petData = response.body()!!
@@ -72,14 +72,13 @@ class PetDetailsViewModel @Inject constructor(
                         )
                     }
                     Log.d("PetDetailsVM", "Pet details loaded successfully.")
-
                 } else {
                     Log.e("PetDetailsVM", "Error fetching pet: ${response.code()} - ${response.message()}")
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "Failed to load pet details.") }
+                    _uiState.update { it.copy(isLoading = false, errorMessage = "Failed to load pet details (Code: ${response.code()}).") }
                 }
             } catch (e: Exception) {
                 Log.e("PetDetailsVM", "Exception fetching pet", e)
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Error: ${e.message}") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Network Error: ${e.message}") }
             }
         }
     }

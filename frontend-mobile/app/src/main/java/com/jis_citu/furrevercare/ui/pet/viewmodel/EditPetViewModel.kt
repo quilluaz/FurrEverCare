@@ -1,7 +1,7 @@
 package com.jis_citu.furrevercare.ui.pet.viewmodel
 
 import android.app.Application
-import android.content.ContentResolver // Import ContentResolver
+import android.content.ContentResolver
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -9,7 +9,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
-import com.jis_citu.furrevercare.data.AuthRepository // *** IMPORT YOUR NEW REPO ***
+import com.jis_citu.furrevercare.data.AuthRepository
 import com.jis_citu.furrevercare.model.Pet
 import com.jis_citu.furrevercare.network.ApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,34 +17,34 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.RequestBody.Companion.asRequestBody // Import for file request body
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream // Import InputStream
+import java.io.IOException
+import java.io.InputStream
 import javax.inject.Inject
 
-// UI State - unchanged from previous version
 data class EditPetUiState(
-    val petId: String = "",
+    val isEditMode: Boolean = false,
+    val petId: String? = null, // Nullable for add mode
     val petName: String = "",
     val species: String = "",
     val breed: String = "",
     val age: String = "",
     val gender: String = "",
     val weight: String = "",
-    val imageUri: Uri? = null,
-    val existingImageBase64: String? = null,
-    val isLoading: Boolean = true,
+    val imageUri: Uri? = null, // For newly picked image
+    val existingImageBase64: String? = null, // For displaying/retaining existing image
+    val isLoading: Boolean = false, // Default false; true if loading existing pet
     val errorMessage: String? = null,
     val isSaving: Boolean = false,
+    val saveSuccess: Boolean = false,
     val speciesList: List<String> = listOf("Dog", "Cat", "Bird", "Rabbit", "Hamster", "Fish", "Other"),
-    val genderList: List<String> = listOf("Male", "Female"),
+    val genderList: List<String> = listOf("Male", "Female", "Unknown"),
     val breedList: List<String> = emptyList()
 )
 
-// Navigation Event - unchanged
 sealed class EditPetNavigationEvent {
     object NavigateBack : EditPetNavigationEvent()
 }
@@ -53,43 +53,59 @@ sealed class EditPetNavigationEvent {
 class EditPetViewModel @Inject constructor(
     private val application: Application,
     private val apiService: ApiService,
-    private val authRepository: AuthRepository, // *** INJECT AuthRepository ***
+    private val authRepository: AuthRepository,
     private val gson: Gson,
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle // Injected SavedStateHandle
 ) : ViewModel() {
 
-    private val petId: String = checkNotNull(savedStateHandle["petId"]) { "petId not found in navigation args" }
+    // Initialize petIdFromArgs from savedStateHandle first
+    private val petIdFromArgs: String? = savedStateHandle["petId"]
 
-    private val _uiState = MutableStateFlow(EditPetUiState(petId = petId))
+    private val _uiState = MutableStateFlow(
+        EditPetUiState( // Initialize state based on petIdFromArgs
+            isEditMode = petIdFromArgs != null,
+            petId = petIdFromArgs,
+            isLoading = petIdFromArgs != null // Start loading only if it's edit mode
+        )
+    )
     val uiState: StateFlow<EditPetUiState> = _uiState.asStateFlow()
 
     private val _navigationEvent = MutableSharedFlow<EditPetNavigationEvent>()
     val navigationEvent: SharedFlow<EditPetNavigationEvent> = _navigationEvent.asSharedFlow()
 
-    // Store the user ID retrieved synchronously
     private var currentUserId: String? = null
 
     init {
-        // Get user ID synchronously from AuthRepository
         currentUserId = authRepository.getCurrentUserId()
+
         if (currentUserId == null) {
             _uiState.update { it.copy(isLoading = false, errorMessage = "User not logged in.") }
-            Log.e("EditPetVM", "User ID is null. Cannot load or save pet details.")
+            Log.e("EditPetVM", "User ID is null. Cannot proceed.")
         } else {
-            // Load details only if user ID is available
-            loadPetDetails()
+            // If in edit mode (petIdFromArgs is not null), load pet details
+            if (_uiState.value.isEditMode && petIdFromArgs != null) {
+                loadPetDetails(petIdFromArgs)
+            } else {
+                // For "Add Pet" mode, ensure initial species and breed list are set if speciesList is not empty
+                val initialSpecies = _uiState.value.speciesList.firstOrNull() ?: ""
+                _uiState.update {
+                    it.copy(
+                        isLoading = false, // Not loading existing data for add mode
+                        species = initialSpecies,
+                        breedList = if (initialSpecies.isNotEmpty()) getBreedsForSpecies(initialSpecies) else emptyList()
+                    )
+                }
+            }
         }
     }
 
-    // loadPetDetails - unchanged from previous version (uses currentUserId)
-    private fun loadPetDetails() {
-        val userId = currentUserId ?: return // Should not be null if init logic is correct
-
+    private fun loadPetDetails(petIdToLoad: String) {
+        val userId = currentUserId ?: return // Should have been checked in init
+        Log.d("EditPetVM", "loadPetDetails called for petId: $petIdToLoad by user: $userId")
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, saveSuccess = false) } // Set loading true
             try {
-                Log.d("EditPetVM", "Fetching pet details for UserID: $userId, PetID: $petId")
-                val response = apiService.getPet(userId, petId)
+                val response = apiService.getPetById(userId, petIdToLoad)
                 if (response.isSuccessful && response.body() != null) {
                     val pet = response.body()!!
                     Log.d("EditPetVM", "Pet details fetched: $pet")
@@ -117,129 +133,152 @@ class EditPetViewModel @Inject constructor(
         }
     }
 
+    fun updatePetName(name: String) = _uiState.update { it.copy(petName = name, saveSuccess = false) }
+    fun updateAge(age: String) = _uiState.update { it.copy(age = age.filter { char -> char.isDigit() }, saveSuccess = false) }
+    fun updateWeight(weight: String) = _uiState.update { it.copy(weight = weight.filter { char -> char.isDigit() || char == '.' }, saveSuccess = false) }
+    fun updateImageUri(uri: Uri?) = _uiState.update { it.copy(imageUri = uri, saveSuccess = false) }
 
-    // State Update Functions - unchanged
-    fun updatePetName(name: String) = _uiState.update { it.copy(petName = name) }
-    fun updateAge(age: String) = _uiState.update { it.copy(age = age.filter { it.isDigit() }) }
-    fun updateWeight(weight: String) = _uiState.update { it.copy(weight = weight.filter { it.isDigit() || it == '.' }) }
-    fun updateImageUri(uri: Uri?) = _uiState.update { it.copy(imageUri = uri) }
     fun updateSpecies(species: String) {
         _uiState.update {
             it.copy(
                 species = species,
-                breed = "",
-                breedList = getBreedsForSpecies(species)
+                breed = "", // Clear breed when species changes
+                breedList = getBreedsForSpecies(species),
+                saveSuccess = false
             )
         }
     }
-    fun updateBreed(breed: String) = _uiState.update { it.copy(breed = breed) }
-    fun updateGender(gender: String) = _uiState.update { it.copy(gender = gender) }
 
-    // getBreedsForSpecies - unchanged
+    fun updateBreed(breed: String) = _uiState.update { it.copy(breed = breed, saveSuccess = false) }
+    fun updateGender(gender: String) = _uiState.update { it.copy(gender = gender, saveSuccess = false) }
+
+    // Using the version from EditPetViewModelPreviewHelper for consistency,
+    // assuming it's the desired list.
     private fun getBreedsForSpecies(species: String): List<String> {
-        // (Implementation is the same as before)
-        return when (species) {
-            "Dog" -> listOf("Labrador", "German Shepherd", "Golden Retriever", "Bulldog", "Poodle", "Beagle", "Shih Tzu", "Aspin", "Mixed", "Other")
-            "Cat" -> listOf("Persian", "Siamese", "Maine Coon", "Ragdoll", "Bengal", "Puspin", "Mixed", "Other")
-            "Bird" -> listOf("Parakeet", "Cockatiel", "Finch", "Canary", "Lovebird", "Other")
-            "Rabbit" -> listOf("Holland Lop", "Netherland Dwarf", "Mini Rex", "Other")
-            "Hamster" -> listOf("Syrian", "Dwarf Campbell", "Roborovski", "Other")
-            "Fish" -> listOf("Goldfish", "Betta", "Guppy", "Other")
-            else -> emptyList()
+        return when (species.lowercase()) {
+            "dog" -> listOf("Labrador Retriever", "German Shepherd", "Golden Retriever", "Bulldog", "Poodle", "Beagle", "Rottweiler", "Dachshund", "Shih Tzu", "Siberian Husky", "Pomeranian", "Chihuahua", "Aspin (Askal)", "Mixed Breed", "Other")
+            "cat" -> listOf("Persian", "Siamese", "Maine Coon", "Ragdoll", "Bengal", "Sphinx", "British Shorthair", "Scottish Fold", "Puspin (Pusang Pinoy)", "Mixed Breed", "Other")
+            "bird" -> listOf("Parakeet (Budgerigar)", "Cockatiel", "African Grey Parrot", "Lovebird", "Finch", "Canary", "Other")
+            "rabbit" -> listOf("Holland Lop", "Netherland Dwarf", "Mini Rex", "Flemish Giant", "Lionhead", "Other")
+            "hamster" -> listOf("Syrian (Golden)", "Dwarf Winter White", "Roborovski", "Campbell's Dwarf", "Chinese", "Other")
+            "fish" -> listOf("Goldfish", "Betta (Siamese Fighting Fish)", "Guppy", "Angelfish", "Koi", "Oscar", "Other")
+            else -> listOf("Other", "Mixed Breed", "Not Applicable")
         }
     }
 
-    // savePetChanges - unchanged from previous version (uses currentUserId)
-    fun savePetChanges() {
-        val userId = currentUserId // Use the ID fetched during init
+    fun savePet() {
+        val userId = currentUserId
         if (userId == null) {
             _uiState.update { it.copy(errorMessage = "Cannot save: User not identified.") }
-            Log.e("EditPetVM", "Attempted to save changes but userId is null.")
             return
         }
 
         val currentState = _uiState.value
-        // Validation - unchanged
-        if (currentState.petName.isBlank() || currentState.species.isBlank() || currentState.gender.isBlank() || currentState.age.isBlank() || currentState.weight.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please fill in required fields (Name, Species, Age, Gender, Weight).") }
+        // Basic Validation
+        if (currentState.petName.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Pet name cannot be empty.") }
+            return
+        }
+        if (currentState.species.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please select a species.") }
+            return
+        }
+        // Breed can be optional or "Other"
+        if (currentState.age.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter pet's age.") }
             return
         }
         val ageInt = currentState.age.toIntOrNull()
-        val weightDouble = currentState.weight.toDoubleOrNull()
         if (ageInt == null || ageInt < 0) {
-            _uiState.update { it.copy(errorMessage = "Please enter a valid age.") }
+            _uiState.update { it.copy(errorMessage = "Please enter a valid age (0 or greater).") }
             return
         }
+        if (currentState.gender.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please select a gender.") }
+            return
+        }
+        if (currentState.weight.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "Please enter pet's weight.") }
+            return
+        }
+        val weightDouble = currentState.weight.toDoubleOrNull()
         if (weightDouble == null || weightDouble <= 0) {
-            _uiState.update { it.copy(errorMessage = "Please enter a valid weight.") }
+            _uiState.update { it.copy(errorMessage = "Please enter a valid weight (greater than 0).") }
             return
         }
 
         if (currentState.isSaving) return
+        _uiState.update { it.copy(isSaving = true, errorMessage = null, saveSuccess = false) }
 
-        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-
-        // Prepare Pet Data - unchanged (uses existingImageBase64 logic)
         val petData = Pet(
-            petID = currentState.petId,
-            ownerID = userId, // Include ownerID if needed
-            name = currentState.petName,
-            species = currentState.species,
-            breed = currentState.breed,
+            petID = if (currentState.isEditMode) currentState.petId ?: "" else "",
+            ownerID = userId,
+            name = currentState.petName.trim(),
+            species = currentState.species.trim(),
+            breed = currentState.breed.trim(),
             age = ageInt,
             gender = currentState.gender,
             weight = weightDouble,
-            imageBase64 = if (currentState.imageUri == null) currentState.existingImageBase64 else null,
-            allergies = null // Assuming allergies are not handled here
+            // TEMPORARILY DISABLED NEW IMAGE:
+            // If editing, use existing image. If adding, image will be null.
+            imageBase64 = if (currentState.isEditMode) currentState.existingImageBase64 else null,
+            allergies = null // TODO: Add allergy input fields if needed
         )
 
-        // Create Request Parts - unchanged
         val petJson = gson.toJson(petData)
+        Log.d("EditPetVM", "Pet JSON for save: $petJson")
         val petRequestBody = petJson.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-        var imagePart: MultipartBody.Part? = null
-        if (currentState.imageUri != null) {
+
+        // *** IMAGE UPLOAD TEMPORARILY DISABLED ***
+        val imagePart: MultipartBody.Part? = null
+        // Original image part creation logic commented out:
+        /*
+        currentState.imageUri?.let { uri ->
             try {
-                imagePart = createImagePart(application.contentResolver, currentState.imageUri, "image")
+                imagePart = createImagePart(application.contentResolver, uri, "image")
             } catch (e: Exception) {
-                Log.e("EditPetVM", "Error creating image part from Uri", e)
-                _uiState.update { it.copy(isSaving = false, errorMessage = "Error processing image file.") }
-                return
+                Log.e("EditPetVM", "Error creating image part from Uri caught in savePet", e)
+                _uiState.update { it.copy(isSaving = false, errorMessage = "Error processing image file: ${e.message}") }
+                return@savePet
             }
         }
+        */
 
-        // API Call - unchanged (uses userId, petId, petRequestBody, imagePart)
         viewModelScope.launch {
             try {
-                Log.d("EditPetVM", "Updating pet. UserID: $userId, PetID: $petId, Data: $petJson, ImagePart Present: ${imagePart != null}")
-                val response = apiService.updatePet(
-                    userId = userId,
-                    petId = currentState.petId,
-                    pet = petRequestBody,
-                    image = imagePart
-                )
-                // ... rest of API call handling (success/error/finally) ...
+                val response = if (currentState.isEditMode) {
+                    Log.d("EditPetVM", "Updating pet. UserID: $userId, PetID: ${currentState.petId}, RequestBody: $petRequestBody, ImagePart: $imagePart")
+                    apiService.updatePet(userId, currentState.petId!!, petRequestBody, imagePart)
+                } else {
+                    Log.d("EditPetVM", "Adding new pet. UserID: $userId, RequestBody: $petRequestBody, ImagePart: $imagePart")
+                    apiService.addPet(userId, petRequestBody, imagePart)
+                }
+
                 if (response.isSuccessful) {
-                    Log.d("EditPetVM", "Pet update successful.")
+                    val action = if (currentState.isEditMode) "update" else "add"
+                    Log.d("EditPetVM", "Pet $action successful. Response: ${response.body()?.string()}") // Log response body if any
+                    _uiState.update { it.copy(saveSuccess = true) }
                     _navigationEvent.emit(EditPetNavigationEvent.NavigateBack)
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e("EditPetVM", "Error updating pet: ${response.code()} - $errorBody")
-                    _uiState.update { it.copy(errorMessage = "Failed to update pet (Code: ${response.code()})") }
+                    val action = if (currentState.isEditMode) "update" else "add"
+                    Log.e("EditPetVM", "Error ${action}ing pet: ${response.code()} - $errorBody")
+                    _uiState.update { it.copy(errorMessage = "Failed to $action pet (Code: ${response.code()}). ${errorBody ?: ""}".trim()) }
                 }
-
             } catch (e: Exception) {
-                Log.e("EditPetVM", "Exception updating pet", e)
-                _uiState.update { it.copy(errorMessage = "Network Error: ${e.message}") }
+                val action = if (currentState.isEditMode) "update" else "add"
+                Log.e("EditPetVM", "Exception ${action}ing pet", e)
+                _uiState.update { it.copy(errorMessage = "Network Error while ${action}ing pet: ${e.message}") }
             } finally {
                 _uiState.update { it.copy(isSaving = false) }
             }
         }
     }
 
-
-    // Helper Function createImagePart - unchanged
-    private fun createImagePart(contentResolver: ContentResolver, uri: Uri, partName: String): MultipartBody.Part? {
-        return try {
+    // This function is currently unused since image upload is disabled,
+    // but kept for future re-enablement.
+    private fun createImagePart(contentResolver: ContentResolver, uri: Uri, partName: String): MultipartBody.Part {
+        try {
             var fileName: String? = null
             contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
@@ -250,24 +289,26 @@ class EditPetViewModel @Inject constructor(
                 }
             }
             val mimeType = contentResolver.getType(uri)
-            fileName = fileName ?: "${System.currentTimeMillis()}.${mimeType?.substringAfter('/') ?: "file"}"
+            val safeFileName = fileName?.replace(Regex("[^a-zA-Z0-9._-]"), "_") ?: "${System.currentTimeMillis()}.${mimeType?.substringAfterLast('/') ?: "file"}"
 
-            val inputStream: InputStream = contentResolver.openInputStream(uri) ?: return null
-            val tempFile = File(application.cacheDir, fileName)
-            val outputStream = FileOutputStream(tempFile)
-            inputStream.copyTo(outputStream)
-            inputStream.close()
-            outputStream.close()
+            val tempFile = File(application.cacheDir, safeFileName).apply { createNewFile() }
+
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(tempFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            } ?: throw IOException("Unable to open input stream for URI: $uri")
+
 
             val requestFile = tempFile.asRequestBody(mimeType?.toMediaTypeOrNull())
-
-            MultipartBody.Part.createFormData(partName, tempFile.name, requestFile).also {
-                tempFile.deleteOnExit()
-                Log.d("EditPetVM","Created image part: ${tempFile.name}, Type: $mimeType")
+            return MultipartBody.Part.createFormData(partName, tempFile.name, requestFile).also {
+                Log.d("EditPetVM", "Created image part: ${tempFile.name}, Type: $mimeType, Size: ${tempFile.length()}")
+                // Consider deleting tempFile after the API call in savePet's finally block or on success
+                tempFile.delete() // Example: delete immediately after creating the part if it's copied by Retrofit
             }
         } catch (e: Exception) {
             Log.e("EditPetVM", "Failed to create MultipartBody.Part from Uri: $uri", e)
-            null
+            throw IOException("Failed to process image for upload: ${e.localizedMessage}", e)
         }
     }
 }

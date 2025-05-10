@@ -1,10 +1,8 @@
+@file:OptIn(ExperimentalMaterial3Api::class) // Apply to the whole file for TopAppBar etc.
+
 package com.jis_citu.furrevercare.ui.pet
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Base64
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -19,86 +17,142 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto // Changed icon
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Category // Icon for Species
+import androidx.compose.material.icons.filled.Pets // Icon for Breed
+import androidx.compose.material.icons.filled.Wc // Icon for Gender
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color // <<< Added Import
-import androidx.compose.ui.graphics.asImageBitmap // <<< Added Import for Base64
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource // Import painterResource for fallback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType // Import KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview // Keep preview if needed
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController // Keep for preview if needed
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.jis_citu.furrevercare.R // For placeholder image if needed
+import com.jis_citu.furrevercare.R
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
-import com.jis_citu.furrevercare.theme.PrimaryGreen
-// Import the ViewModel and related classes used in EditPetScreen
-import com.jis_citu.furrevercare.utils.decodeBase64 // <<< Add this import
-import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetViewModel
+// import com.jis_citu.furrevercare.theme.PrimaryGreen // Use MaterialTheme.colorScheme.primary instead
 import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetNavigationEvent
-// Removed viewModel.decodeBase64 as it's included below now
+import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetUiState
+import com.jis_citu.furrevercare.ui.pet.viewmodel.EditPetViewModel
+import com.jis_citu.furrevercare.utils.decodeBase64 // Your utility function
 import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditPetScreen( // Renamed composable for clarity if it edits pets
+fun EditPetScreen( // This screen handles both Add and Edit Pet
     navController: NavController,
-    viewModel: EditPetViewModel = hiltViewModel() // Inject ViewModel
+    viewModel: EditPetViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
-    val context = LocalContext.current
+    val context = LocalContext.current // For ImageRequest
 
-    // Handle navigation
+    // Handle navigation events from ViewModel
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collectLatest { event ->
             when (event) {
                 is EditPetNavigationEvent.NavigateBack -> {
-                    navController.navigateUp()
+                    navController.popBackStack() // More robust than navigateUp in some cases
                 }
             }
         }
     }
 
-    // Image Picker
-    val imagePicker = rememberLauncherForActivityResult(
+    // Image Picker Launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
             viewModel.updateImageUri(uri)
         }
     )
 
-    FurrEverCareTheme {
+    EditPetScreenContent(
+        uiState = uiState,
+        onImagePickerLaunch = { imagePickerLauncher.launch("image/*") },
+        onPetNameChange = viewModel::updatePetName,
+        onSpeciesChange = viewModel::updateSpecies,
+        onBreedChange = viewModel::updateBreed,
+        onGenderChange = viewModel::updateGender,
+        onAgeChange = viewModel::updateAge,
+        onWeightChange = viewModel::updateWeight,
+        onSaveClick = viewModel::savePet,
+        onNavigateBack = { navController.popBackStack() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditPetScreenContent(
+    uiState: EditPetUiState,
+    onImagePickerLaunch: () -> Unit,
+    onPetNameChange: (String) -> Unit,
+    onSpeciesChange: (String) -> Unit,
+    onBreedChange: (String) -> Unit,
+    onGenderChange: (String) -> Unit,
+    onAgeChange: (String) -> Unit,
+    onWeightChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Show error message in Snackbar
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+            // Optionally, clear the error in VM after showing if it's a one-time message
+        }
+    }
+    // Show success message in Snackbar
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess && !uiState.isEditMode) { // Show only for "Add" success for now
+            snackbarHostState.showSnackbar(
+                message = "Pet added successfully!",
+                duration = SnackbarDuration.Short
+            )
+        } else if (uiState.saveSuccess && uiState.isEditMode) {
+            snackbarHostState.showSnackbar(
+                message = "Pet updated successfully!",
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+
+    FurrEverCareTheme { // Ensure theme is applied
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text("Edit Pet Profile") },
+                    title = { Text(if (uiState.isEditMode) "Edit Pet Profile" else "Add New Pet") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background, // Match background
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                     )
                 )
             }
         ) { paddingValues ->
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            if (uiState.isLoading && uiState.isEditMode) { // Show loader only when loading existing pet
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             } else {
@@ -106,7 +160,7 @@ fun EditPetScreen( // Renamed composable for clarity if it edits pets
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 16.dp, vertical = 8.dp) // Padding for content
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -115,37 +169,28 @@ fun EditPetScreen( // Renamed composable for clarity if it edits pets
                         modifier = Modifier
                             .size(120.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant) // Placeholder background
-                            .border(2.dp, PrimaryGreen, CircleShape)
-                            .clickable { imagePicker.launch("image/*") }, // Launch picker on click
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .clickable(onClick = onImagePickerLaunch),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Determine the data source for the image
-                        val imageData: Any? = if (uiState.imageUri != null) {
-                            // Prioritize newly picked image Uri
-                            uiState.imageUri
-                        } else if (!uiState.existingImageBase64.isNullOrBlank()) {
-                            // Use existing Base64 if available (decode it)
-                            decodeBase64(uiState.existingImageBase64!!) // Use helper function
-                        } else {
-                            // Fallback to placeholder resource ID
-                            R.drawable.logo_icon_colored // <<< Use your actual placeholder drawable
-                        }
+                        val imageData: Any? = uiState.imageUri
+                            ?: uiState.existingImageBase64?.let { decodeBase64(it) }
+                            ?: R.drawable.logo_icon_colored // Use your placeholder
 
                         Image(
                             painter = rememberAsyncImagePainter(
                                 ImageRequest.Builder(context)
-                                    .data(data = imageData) // Load Uri, Bitmap, or Resource ID
-                                    .placeholder(R.drawable.logo_icon_colored) // Placeholder while loading
-                                    .error(R.drawable.logo_icon_colored) // Error fallback
+                                    .data(data = imageData)
+                                    .placeholder(R.drawable.logo_icon_colored)
+                                    .error(R.drawable.logo_icon_colored)
+                                    .crossfade(true)
                                     .build()
                             ),
                             contentDescription = "Pet Image",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop // Crop to fit the circle
+                            contentScale = ContentScale.Crop
                         )
-
-                        // Icon overlay - Uses imported Color now
                         Icon(
                             imageVector = Icons.Default.AddAPhoto,
                             contentDescription = "Change Photo",
@@ -157,14 +202,13 @@ fun EditPetScreen( // Renamed composable for clarity if it edits pets
                                 .padding(4.dp)
                         )
                     }
-
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Pet Name
                     OutlinedTextField(
                         value = uiState.petName,
-                        onValueChange = viewModel::updatePetName,
-                        label = { Text("Pet Name") },
+                        onValueChange = onPetNameChange,
+                        label = { Text("Pet Name*") },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !uiState.isSaving,
                         singleLine = true,
@@ -172,51 +216,123 @@ fun EditPetScreen( // Renamed composable for clarity if it edits pets
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // --- TODO: Implement ExposedDropdownMenuBoxes properly ---
-                    // These require state variables for 'expanded' status and logic
-                    // to populate the dropdown items and handle selections, likely
-                    // involving updates to the ViewModel. The current setup is read-only.
-
-                    // Species (Read-Only Example - Needs proper dropdown)
-                    OutlinedTextField(
-                        value = uiState.species,
-                        onValueChange = {},
-                        label = { Text("Species") },
-                        readOnly = true,
-                        enabled = !uiState.isSaving,
+                    // Species Dropdown
+                    var speciesExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = speciesExpanded,
+                        onExpandedChange = { speciesExpanded = !speciesExpanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.species,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Species*") },
+                            leadingIcon = { Icon(Icons.Filled.Category, contentDescription = "Species") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = speciesExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            enabled = !uiState.isSaving,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = speciesExpanded,
+                            onDismissRequest = { speciesExpanded = false }
+                        ) {
+                            uiState.speciesList.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        onSpeciesChange(selectionOption)
+                                        speciesExpanded = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Breed (Read-Only Example - Needs proper dropdown)
-                    OutlinedTextField(
-                        value = uiState.breed,
-                        onValueChange = {},
-                        label = { Text("Breed") },
-                        readOnly = true,
-                        enabled = uiState.species.isNotEmpty() && !uiState.isSaving,
+                    // Breed Dropdown
+                    var breedExpanded by remember { mutableStateOf(false) }
+                    val breedDropdownEnabled = uiState.species.isNotEmpty() && uiState.breedList.isNotEmpty() && !uiState.isSaving
+                    ExposedDropdownMenuBox(
+                        expanded = breedExpanded && breedDropdownEnabled,
+                        onExpandedChange = { if (breedDropdownEnabled) breedExpanded = !breedExpanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.breed,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Breed") },
+                            leadingIcon = { Icon(Icons.Filled.Pets, contentDescription = "Breed") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = breedExpanded && breedDropdownEnabled) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            enabled = breedDropdownEnabled,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = breedExpanded && breedDropdownEnabled,
+                            onDismissRequest = { breedExpanded = false }
+                        ) {
+                            uiState.breedList.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        onBreedChange(selectionOption)
+                                        breedExpanded = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Gender (Read-Only Example - Needs proper dropdown)
-                    OutlinedTextField(
-                        value = uiState.gender,
-                        onValueChange = {},
-                        label = { Text("Gender") },
-                        readOnly = true,
-                        enabled = !uiState.isSaving,
+                    // Gender Dropdown
+                    var genderExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = genderExpanded,
+                        onExpandedChange = { genderExpanded = !genderExpanded },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.gender,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Gender*") },
+                            leadingIcon = { Icon(Icons.Filled.Wc, contentDescription = "Gender") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            enabled = !uiState.isSaving,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = genderExpanded,
+                            onDismissRequest = { genderExpanded = false }
+                        ) {
+                            uiState.genderList.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        onGenderChange(selectionOption)
+                                        genderExpanded = false
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
-                    // --- End of Dropdown TODO ---
-
 
                     // Age
                     OutlinedTextField(
                         value = uiState.age,
-                        onValueChange = viewModel::updateAge,
-                        label = { Text("Age (years)") },
+                        onValueChange = onAgeChange,
+                        label = { Text("Age (years)*") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         enabled = !uiState.isSaving,
                         singleLine = true,
@@ -228,41 +344,30 @@ fun EditPetScreen( // Renamed composable for clarity if it edits pets
                     // Weight
                     OutlinedTextField(
                         value = uiState.weight,
-                        onValueChange = viewModel::updateWeight,
-                        label = { Text("Weight (kg)") }, // TODO: Add unit preference if needed
+                        onValueChange = onWeightChange,
+                        label = { Text("Weight (kg)*") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         enabled = !uiState.isSaving,
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Display Error Message
-                    uiState.errorMessage?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
+                    // Error message display already handled by SnackbarHost
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.weight(1f).defaultMinSize(minHeight = 24.dp)) // Push button to bottom
 
-                    // Save Button
                     Button(
-                        onClick = viewModel::savePetChanges,
-                        enabled = !uiState.isSaving && !uiState.isLoading, // Enable only when not saving/loading
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                        onClick = onSaveClick,
+                        enabled = !uiState.isSaving && !(uiState.isLoading && uiState.isEditMode),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
-                            Text("Update Pet")
+                            Text(if (uiState.isEditMode) "Update Pet" else "Add Pet")
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp)) // Bottom padding

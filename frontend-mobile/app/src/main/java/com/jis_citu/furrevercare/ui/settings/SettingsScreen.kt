@@ -7,17 +7,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.Logout // Added for logout icon
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos // Consistent forward arrow
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Notes // For Data Usage
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Gavel // For Privacy Policy
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.Straighten // Unit Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-// import androidx.compose.ui.platform.LocalContext // No longer needed directly for preferences
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,11 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-// import com.jis_citu.furrevercare.data.PreferenceManager // No longer directly used
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
-import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsViewModel // Import ViewModel
-import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsNavigationEvent // Import Nav Event
+import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsNavigationEvent
+import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -37,20 +40,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel = hiltViewModel() // Inject ViewModel
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    // val context = LocalContext.current // Not needed for preference logic anymore
-    val coroutineScope = rememberCoroutineScope() // Still useful for Snackbar
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Collect states from ViewModel
     val isDarkMode by viewModel.isDarkTheme.collectAsState()
     val selectedUnit by viewModel.unitPreference.collectAsState()
 
-    // Local UI states
-    var notificationsEnabled by remember { mutableStateOf(true) } // Assuming this is local or comes from another source
+    // Local UI states (Notifications still local as per current ViewModel)
+    var notificationsEnabled by remember { mutableStateOf(true) } // TODO: Persist if needed
     var showUnitDropdown by remember { mutableStateOf(false) }
     var deleteDialogOpen by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collectLatest { event ->
@@ -67,33 +69,39 @@ fun SettingsScreen(
         }
     }
 
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
+    FurrEverCareTheme { // Ensures previews and screen use the correct theme
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Settings") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurface // Use theme color
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface, // Use theme color
+                        titleContentColor = MaterialTheme.colorScheme.onSurface, // Use theme color
                     )
-                }
-                Text(
-                    text = "Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
                 )
-            }
-
-            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background) // Use theme background
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                item {
+                    SectionTitle("General") // Optional section title
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 item {
                     SettingsCard {
                         SettingsRow(
@@ -101,46 +109,62 @@ fun SettingsScreen(
                             label = "Dark Mode",
                             trailingContent = {
                                 Switch(
-                                    checked = isDarkMode,
+                                    checked = isDarkMode, // From ViewModel
                                     onCheckedChange = { newThemeState ->
-                                        viewModel.setDarkTheme(newThemeState) // Use ViewModel
-                                    }
+                                        viewModel.setDarkTheme(newThemeState)
+                                    },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
                                 )
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
                     SettingsCard {
                         SettingsRow(
                             icon = Icons.Default.Notifications,
-                            label = "Notifications",
+                            label = "Notifications", // TODO: Connect to actual notification preference
                             trailingContent = {
                                 Switch(
                                     checked = notificationsEnabled,
                                     onCheckedChange = { notificationsEnabled = it }
+                                    // TODO: Add ViewModel call if this needs to be persisted
                                 )
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
                     SettingsCard {
                         SettingsRow(
                             icon = Icons.Outlined.Straighten,
                             label = "Units",
                             trailingContent = {
                                 Box {
-                                    Text(
-                                        text = "$selectedUnit ▾", // Use ViewModel state
-                                        modifier = Modifier
-                                            .clickable { showUnitDropdown = true }
-                                            .padding(8.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.clickable { showUnitDropdown = true },
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedUnit, // From ViewModel
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.primary // Highlight selected unit
+                                        )
+                                        Icon(
+                                            Icons.Default.ArrowDropDown,
+                                            contentDescription = "Change unit",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                     DropdownMenu(
                                         expanded = showUnitDropdown,
                                         onDismissRequest = { showUnitDropdown = false }
@@ -149,7 +173,7 @@ fun SettingsScreen(
                                             DropdownMenuItem(
                                                 text = { Text(option) },
                                                 onClick = {
-                                                    viewModel.setUnitPreference(option) // Use ViewModel
+                                                    viewModel.setUnitPreference(option)
                                                     showUnitDropdown = false
                                                 }
                                             )
@@ -159,101 +183,81 @@ fun SettingsScreen(
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(24.dp)) // More space before next section
                 }
-                // Privacy Policy Item
+
+
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    SectionTitle("Legal & Information")
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                item {
                     SettingsCard {
                         SettingsRow(
-                            icon = Icons.Default.Lock,
+                            icon = Icons.Filled.Gavel, // More relevant icon
                             label = "Privacy Policy",
-                            trailingContent = {
-                                IconButton(onClick = {
-                                    // TODO: Navigate to actual privacy policy screen if it exists
-                                    // navController.navigate(Routes.PRIVACY_POLICY)
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("Privacy Policy clicked") }
-                                }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View Privacy Policy")
-                                }
-                            }
+                            onClick = { viewModel.onPrivacyPolicyClicked() }
                         )
                     }
-                }
-
-                // Data Usage Item
-                item {
                     Spacer(modifier = Modifier.height(12.dp))
+                }
+                item {
                     SettingsCard {
                         SettingsRow(
-                            icon = Icons.Default.Storage,
+                            icon = Icons.AutoMirrored.Filled.Notes, // More relevant icon
                             label = "Data Usage",
-                            trailingContent = {
-                                IconButton(onClick = {
-                                    // TODO: Navigate to actual data usage screen if it exists
-                                    // navController.navigate(Routes.DATA_USAGE)
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("Data Usage clicked") }
-                                }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View Data Usage")
-                                }
-                            }
+                            onClick = { viewModel.onDataUsageClicked() }
                         )
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
-
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    SectionTitle("Account Actions")
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                item {
                     SettingsCard {
                         SettingsRow(
-                            icon = Icons.AutoMirrored.Filled.Logout, // Changed icon for clarity
+                            icon = Icons.AutoMirrored.Filled.Logout,
                             label = "Logout",
-                            textColor = MaterialTheme.colorScheme.error, // Use theme error color
-                            iconTint = MaterialTheme.colorScheme.error,  // Use theme error color
-                            trailingContent = {
-                                // Removed the "Delete" text, click directly on the row
-                            },
-                            onClick = { // Make the whole row clickable for logout
-                                viewModel.logoutUser() // Call ViewModel to handle logout and navigation
-                                // Snackbar can be shown from VM event or here if simpler
+                            textColor = MaterialTheme.colorScheme.error,
+                            iconTint = MaterialTheme.colorScheme.error,
+                            onClick = {
+                                viewModel.logoutUser() // Handles navigation via event
+                                // Snackbar can be shown by observing a state from VM after logout
+                                // or just assuming navigation means success.
                                 coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Logged out successfully.")
+                                    // snackbarHostState.showSnackbar("Logging out...") // VM will navigate
                                 }
                             }
                         )
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
-
                 item {
-                    Spacer(modifier = Modifier.height(12.dp))
                     SettingsCard {
                         SettingsRow(
                             icon = Icons.Default.Delete,
                             label = "Delete Account",
                             textColor = MaterialTheme.colorScheme.error,
                             iconTint = MaterialTheme.colorScheme.error,
-                            trailingContent = {
-                                // Removed the "Delete" text, click directly on the row if preferred
-                                // Or keep it as a more explicit action button
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Delete Account", tint = MaterialTheme.colorScheme.error)
-                            },
-                            onClick = { deleteDialogOpen = true } // Make the whole row clickable
+                            onClick = { deleteDialogOpen = true }
                         )
                     }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
 
-
                 item {
-                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "FurrEverCare v1.1.4", // Example version
+                        text = "FurrEverCare v1.0.0", // Keep your app version
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth(), // Removed .align(Alignment.CenterHorizontally) as LazyColumn handles width
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center // Added for centering text
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(80.dp)) // For bottom padding
+                    Spacer(modifier = Modifier.height(16.dp)) // Bottom padding
                 }
             }
         }
@@ -261,15 +265,19 @@ fun SettingsScreen(
         if (deleteDialogOpen) {
             AlertDialog(
                 onDismissRequest = { deleteDialogOpen = false },
-                title = { Text("Delete Account") },
-                text = { Text("Are you sure you want to permanently delete your account? This action cannot be undone.") },
+                icon = { Icon(Icons.Default.Delete, contentDescription = "Delete Icon", tint = MaterialTheme.colorScheme.error) },
+                title = { Text("Delete Account", fontWeight = FontWeight.Bold) },
+                text = { Text("Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.") },
                 confirmButton = {
-                    TextButton(onClick = {
-                        deleteDialogOpen = false
-                        // TODO: Implement account deletion logic (call ViewModel method that interacts with backend and Firebase)
-                        coroutineScope.launch { snackbarHostState.showSnackbar("Account deletion initiated (not implemented).") }
-                    }) {
-                        Text("Yes, Delete", color = MaterialTheme.colorScheme.error)
+                    Button(
+                        onClick = {
+                            deleteDialogOpen = false
+                            // TODO: viewModel.deleteAccount() - Implement this in ViewModel
+                            coroutineScope.launch { snackbarHostState.showSnackbar("Account deletion requested (not implemented).") }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.onError)
                     }
                 },
                 dismissButton = {
@@ -279,20 +287,18 @@ fun SettingsScreen(
                 }
             )
         }
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
-// SettingsCard and SettingsRow Composables (from your provided file, minor adjustments for consistency)
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Subtle elevation
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Slightly different from background
+        shape = RoundedCornerShape(12.dp), // Consistent shape
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) // Slightly different from background
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { // Adjusted padding
+        Column(modifier = Modifier.padding(vertical = 4.dp)) { // Reduced vertical padding for rows
             content()
         }
     }
@@ -303,45 +309,55 @@ fun SettingsRow(
     icon: ImageVector,
     label: String,
     modifier: Modifier = Modifier,
-    textColor: Color = LocalContentColor.current, // Use LocalContentColor
-    iconTint: Color = LocalContentColor.current,  // Use LocalContentColor
-    trailingContent: (@Composable () -> Unit)? = null, // Made optional
-    onClick: (() -> Unit)? = null // Made onClick optional for rows that only display info
+    textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, // Default to onSurfaceVariant
+    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,  // Default to onSurfaceVariant
+    trailingContent: (@Composable () -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
-    val rowModifier = if (onClick != null) {
-        modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp) // Increased padding for better touch target
-    } else {
-        modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-    }
+    val rowModifier = modifier
+        .fillMaxWidth()
+        .let { if (onClick != null) it.clickable(onClick = onClick) else it } // Apply clickable only if onClick is provided
+        .padding(horizontal = 16.dp, vertical = 16.dp) // Consistent padding within the row
+
     Row(
         modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(imageVector = icon, contentDescription = label, tint = iconTint)
+        Icon(imageVector = icon, contentDescription = label, tint = iconTint, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium, // Or bodyLarge
+            style = MaterialTheme.typography.bodyLarge, // Consistent typography
             color = textColor,
             modifier = Modifier.weight(1f)
         )
-        trailingContent?.invoke() // Invoke if not null
+        trailingContent?.invoke()
     }
 }
 
+@Composable
+fun SectionTitle(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.primary, // Use primary color for section titles
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp)
+    )
+}
 
+
+// --- Previews ---
 @Preview(showBackground = true, name = "Settings Screen Light")
 @Composable
 fun SettingsScreenLightPreview() {
     FurrEverCareTheme(darkTheme = false) {
-        Surface {
-            SettingsScreen(navController = rememberNavController())
-        }
+        // For preview, you need a way to provide a SettingsViewModel instance
+        // or create a stateless SettingsScreenContent composable.
+        // This will likely use a default/mocked ViewModel if Hilt isn't fully active in preview.
+        SettingsScreen(navController = rememberNavController())
     }
 }
 
@@ -349,8 +365,6 @@ fun SettingsScreenLightPreview() {
 @Composable
 fun SettingsScreenDarkPreview() {
     FurrEverCareTheme(darkTheme = true) {
-        Surface {
-            SettingsScreen(navController = rememberNavController())
-        }
+        SettingsScreen(navController = rememberNavController())
     }
 }

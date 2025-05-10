@@ -222,89 +222,93 @@ export default function PetProfiles() {
             {pets.map((pet) => (
               <div
                 key={pet.petID}
-                className="bg-white rounded-lg shadow relative overflow-hidden text-sm">
+                className="bg-white rounded-xl shadow-lg relative overflow-hidden text-sm transition-transform duration-200 hover:scale-[1.02] hover:shadow-xl">
+                {/* Accent Bar */}
+                <div className="absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-[#EA6C7B] to-[#68D391]" />
+                
                 {isPetLoading(pet.petID) && (
-                  <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-10">
+                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
                     <Loader className="h-6 w-6 text-[#EA6C7B] animate-spin" />
                     <p className="mt-1 text-gray-500 text-xs">Processing...</p>
                   </div>
                 )}
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-3">
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       {pet.imageBase64 ? (
-                        <img
-                          src={`data:image/jpeg;base64,${pet.imageBase64}`}
-                          alt={`${pet.name}'s photo`}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <div className="relative">
+                          <img
+                            src={`data:image/jpeg;base64,${pet.imageBase64}`}
+                            alt={`${pet.name}'s photo`}
+                            className="w-14 h-14 rounded-full object-cover border-2 border-[#FFF7EC] shadow-sm"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#FFF7EC] flex items-center justify-center">
+                            <div className="w-3 h-3 rounded-full bg-[#8A973F]"></div>
+                          </div>
+                        </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-[#F0B542]/20 flex items-center justify-center text-[#F0B542] text-lg font-bold">
-                          {pet.name?.[0]?.toUpperCase() || ""}
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#F0B542]/20 to-[#EA6C7B]/20 flex items-center justify-center text-[#F0B542] text-xl font-bold border-2 border-[#FFF7EC] shadow-sm">
+                            {pet.name?.[0]?.toUpperCase() || ""}
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#FFF7EC] flex items-center justify-center">
+                            <div className="w-3 h-3 rounded-full bg-[#8A973F]"></div>
+                          </div>
                         </div>
                       )}
                       <div>
-                        <h2 className="text-lg font-semibold text-[#042C3C]">
+                        <h2 className="text-lg font-bold text-[#042C3C]">
                           {pet.name}
                         </h2>
-                        <p className="text-xs text-gray-500">
-                          {pet.species} · {pet.breed}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs px-2 py-0.5 bg-[#FFF7EC] text-[#EA6C7B] rounded-full">
+                            {pet.species}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {pet.breed}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-1">
                       <button
                         onClick={() => confirmEditPet(pet)}
                         disabled={!userID || isPetLoading(pet.petID)}
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded">
+                        className="p-1.5 text-gray-500 hover:text-[#EA6C7B] hover:bg-[#FFF7EC] rounded-lg transition-colors">
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => confirmDeletePet(pet)}
                         disabled={!userID || isPetLoading(pet.petID)}
-                        className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded">
+                        className="p-1.5 text-gray-500 hover:text-[#EA6C7B] hover:bg-[#FFF7EC] rounded-lg transition-colors">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div>
-                      <p className="text-[10px] text-[#042C3C]">Age</p>
-                      <p className="text-xs text-gray-500">{pet.age} yrs</p>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-[#FFF7EC] rounded-lg p-2">
+                      <p className="text-[10px] font-medium text-[#042C3C] mb-0.5">Age</p>
+                      <p className="text-xs text-gray-600">{pet.age} yrs</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-[#042C3C]">Weight</p>
-                      <p className="text-xs text-gray-500">{pet.weight} kg</p>
+                    <div className="bg-[#FFF7EC] rounded-lg p-2">
+                      <p className="text-[10px] font-medium text-[#042C3C] mb-0.5">Weight</p>
+                      <p className="text-xs text-gray-600">{pet.weight} kg</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-[#042C3C]">Gender</p>
-                      <p className="text-xs text-gray-500">
+                    <div className="bg-[#FFF7EC] rounded-lg p-2">
+                      <p className="text-[10px] font-medium text-[#042C3C] mb-0.5">Gender</p>
+                      <p className="text-xs text-gray-600">
                         {pet.gender || "Unknown"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-[#042C3C]">Allergies</p>
-                      <p className="text-xs text-gray-500">
+                    <div className="bg-[#FFF7EC] rounded-lg p-2">
+                      <p className="text-[10px] font-medium text-[#042C3C] mb-0.5">Allergies</p>
+                      <p className="text-xs text-gray-600 line-clamp-1">
                         {pet.allergies && pet.allergies.length
                           ? pet.allergies.join(", ")
                           : "None"}
                       </p>
                     </div>
                   </div>
-                </div>
-                <div className="border-t border-gray-100 grid grid-cols-3 divide-x text-xs">
-                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
-                    <Calendar className="h-4 w-4" />
-                    <span>Schedule</span>
-                  </button>
-                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
-                    <Activity className="h-4 w-4" />
-                    <span>Health</span>
-                  </button>
-                  <button className="py-2 flex flex-col items-center justify-center hover:bg-gray-50">
-                    <FileText className="h-4 w-4" />
-                    <span>Records</span>
-                  </button>
                 </div>
               </div>
             ))}

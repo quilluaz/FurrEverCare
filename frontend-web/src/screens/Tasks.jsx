@@ -505,78 +505,63 @@ const API_BASE_URL = "https://furrevercare-deploy-13.onrender.com/api";
           </div>
         ) 
         : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {tasks.map((task) => (
               <div
                 key={task.taskID}
-                className={`bg-white rounded-lg shadow relative overflow-hidden text-sm transition-opacity duration-300 ${isTaskLoading(task.taskID) ? "opacity-50" : "opacity-100"}`}>
+                className={`relative bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden text-sm transition-transform duration-200 hover:scale-[1.025] hover:shadow-xl group ${isTaskLoading(task.taskID) ? "opacity-50" : "opacity-100"}`}
+                style={{ minHeight: '180px' }}
+              >
+                {/* Accent Bar */}
+                <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-b from-[#F0B542] via-[#EA6C7B] to-[#042C3C]" />
+                {/* Loader overlay */}
                 {isTaskLoading(task.taskID) && (
                   <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-10">
                     <Loader className="h-6 w-6 text-[#EA6C7B] animate-spin" />
                     <p className="mt-1 text-gray-500 text-xs">Processing...</p>
                   </div>
                 )}
-                <div className="flex justify-between items-start p-4 pb-0">
-                  <h2 className="text-lg font-semibold text-[#042C3C] break-words">
-                    {task.description || "Untitled Task"}
-                  </h2>
-                  <div className="flex gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => { setSelectedTask(task); setShowEditTaskModal(true); }}
-                      disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
-                      className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label={`Edit ${task.description || "task"}`}>
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => confirmDeleteTask(task)}
-                      disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
-                      className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label={`Delete ${task.description || "task"}`}>
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                <div className="p-5 pb-4 flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h2 className="text-lg font-bold text-[#042C3C] mb-0.5 leading-tight">{task.description || "Untitled Task"}</h2>
+                      <p className="text-xs text-gray-500 mb-1 break-words capitalize">{task.taskType ? task.taskType.toLowerCase().replace('_', ' ') : 'Other'}</p>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => { setSelectedTask(task); setShowEditTaskModal(true); }}
+                        disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
+                        className="p-2 rounded-full hover:bg-[#EA6C7B]/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Edit ${task.description || "task"}`}
+                        title="Edit"
+                      >
+                        <Edit className="h-5 w-5 text-[#EA6C7B]" />
+                      </button>
+                      <button
+                        onClick={() => confirmDeleteTask(task)}
+                        disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
+                        className="p-2 rounded-full hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Delete ${task.description || "task"}`}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-5 w-5 text-red-400" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="p-4 pt-1">
-                  <p className="text-xs text-gray-500 capitalize mb-3">
-                    {task.taskType ? task.taskType.toLowerCase().replace('_', ' ') : 'Other'}
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Status
-                      </p>
-                      <p className="text-xs font-medium capitalize">
-                        <span className={`${task.status === 'COMPLETED' ? 'text-green-600' : task.status === 'PENDING' ? 'text-blue-600' : task.status === 'CANCELLED' ? 'text-gray-500' : 'text-gray-600'}`}>
-                          {task.status ? task.status.toLowerCase() : 'Pending'}
-                        </span>
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Progress
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {task.status === 'COMPLETED' ? '100%' : task.status === 'CANCELLED' ? '0%' : '50%'}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-[10px] font-medium text-[#042C3C]">
-                        Scheduled Date & Time
-                      </p>
-                      <p className="text-xs text-gray-500 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDateTime(task.scheduledDateTime)}
-                      </p>
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${task.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : task.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : task.status === 'CANCELLED' ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-700'}`}>{task.status === 'COMPLETED' ? <span>✔️</span> : task.status === 'PENDING' ? <span>⏳</span> : task.status === 'CANCELLED' ? <span>⛔</span> : <span>📋</span>}{task.status ? task.status.toLowerCase() : 'pending'}</span>
+                    {task.taskType && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-[#EA6C7B]/10 text-[#EA6C7B]"><span>🗂️</span>{task.taskType.toLowerCase().replace('_', ' ')}</span>}
+                  </div>
+                  {/* Details */}
+                  <div className="grid grid-cols-1 gap-y-2 text-xs text-gray-600 mb-2">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span className="font-semibold">Scheduled:</span> {formatDateTime(task.scheduledDateTime)}
                     </div>
                     {task.notes && (
-                      <div className="col-span-2">
-                        <p className="text-[10px] font-medium text-[#042C3C]">
-                          Notes
-                        </p>
-                        <p className="text-xs text-gray-500 break-words">
-                          {task.notes}
-                        </p>
+                      <div>
+                        <span className="font-semibold">Notes:</span> {task.notes}
                       </div>
                     )}
                   </div>

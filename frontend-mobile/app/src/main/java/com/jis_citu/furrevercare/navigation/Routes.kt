@@ -1,11 +1,8 @@
 package com.jis_citu.furrevercare.navigation
 
 object Routes {
-    // Onboarding
-    const val SPLASH = "splash"
     const val ONBOARDING = "onboarding"
 
-    // Auth
     const val WELCOME_AUTH = "welcome_auth"
     const val LOGIN = "login"
     const val REGISTER = "register"
@@ -14,36 +11,29 @@ object Routes {
     const val FORGOT_PASSWORD_NEW_PASSWORD = "forgot_password_new_password"
     const val VERIFICATION_SUCCESS = "verification_success"
 
-    // Main
     const val MAIN = "main"
+
     const val HOME = "home"
-
-    // Notifications
     const val NOTIFICATIONS = "notifications"
-
-    // Chatbot
-    const val CHAT_BOT = "chat_bot"
-    const val CHAT_LIST = "chat_list"
-
-    // Article
-    const val SEARCH = "search"
-    const val SEARCH_RESULTS = "search_results"
-
-    // Pets
+    const val PROFILE = "profile"
     const val PET_LIST = "pet_list"
+    const val RESOURCE_LIST = "resource_list"
+
     const val PET_DETAILS = "pet_details"
     const val ADD_PET = "add_pet"
     const val EDIT_PET = "edit_pet"
-
-    // Profile
-    const val PROFILE = "profile"
     const val EDIT_PROFILE = "edit_profile"
+    const val EMERGENCY_PROFILE = "emergency_profile"
+    const val ADD_EDIT_RESOURCE = "add_edit_resource"
+    const val RESOURCE_DETAILS = "resource_details"
 
-    // Articles
-    const val ARTICLE_SEARCH = "article_search"
-    const val ARTICLE_DETAIL = "article_detail"
+    const val ADD_EDIT_SCHEDULED_TASK = "add_edit_scheduled_task"
+    const val ADD_EDIT_TREATMENT_PLAN = "add_edit_treatment_plan"
+    const val ADD_EDIT_MEDICAL_RECORD = "add_edit_medical_record"
+    const val SCHEDULE_LIST = "schedule_list"
+    const val TREATMENT_PLAN_LIST = "treatment_plan_list"
+    const val MEDICAL_RECORD_LIST = "medical_record_list"
 
-    // Settings
     const val SETTINGS = "settings"
     const val FAQS = "faqs"
     const val PRIVACY_POLICY = "privacy_policy"

@@ -1,19 +1,13 @@
 package com.jis_citu.furrevercare.ui.pet
 
+import android.graphics.Bitmap // For Base64 result
+import android.graphics.BitmapFactory // For Base64 decoding
+import android.util.Base64 // For Base64 decoding
+import android.util.Log // For logging
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.* // Keep wildcard layout import
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -23,32 +17,26 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.* // Keep wildcard material3 import
+import androidx.compose.runtime.* // Keep wildcard runtime import
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap // For Base64 result
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext // Needed for Coil
+import androidx.compose.ui.res.painterResource // For fallback image
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage // <<< Import Coil AsyncImage
+import coil.request.ImageRequest // <<< Import Coil ImageRequest
+import com.jis_citu.furrevercare.utils.decodeBase64
 import com.jis_citu.furrevercare.R
-import com.jis_citu.furrevercare.model.Pet
+import com.jis_citu.furrevercare.model.Pet // Ensure Pet model is imported
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.Background
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
@@ -56,30 +44,33 @@ import com.jis_citu.furrevercare.theme.PrimaryGreen
 
 @Composable
 fun PetListScreen(navController: NavController) {
+    // TODO: Replace sample data with actual data fetched via ViewModel
     val pets = remember {
         listOf(
+            // Sample data adjusted slightly - imageBase64 would normally come from backend
             Pet(
-                id = "1",
+                petID = "1", // <<< Use petID
                 name = "Max",
                 species = "Dog",
                 breed = "Golden Retriever",
                 age = 3,
                 gender = "Male",
                 weight = 30.5,
-                imageRes = R.drawable.dog,
+                imageBase64 = null, // <<< Use imageBase64 (null for sample, relies on fallback)
                 allergies = listOf("Chicken", "Peanuts")
             ),
             Pet(
-                id = "2",
+                petID = "2", // <<< Use petID
                 name = "Whiskers",
                 species = "Cat",
                 breed = "Siamese",
                 age = 2,
                 gender = "Female",
                 weight = 4.2,
-                imageRes = R.drawable.cat,
+                imageBase64 = null, // <<< Use imageBase64 (null for sample, relies on fallback)
                 allergies = listOf("Dairy")
             )
+            // Add more sample pets if needed
         )
     }
 
@@ -88,7 +79,7 @@ fun PetListScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(Background) // Assuming Background is defined in theme
     ) {
         Column(
             modifier = Modifier
@@ -116,25 +107,28 @@ fun PetListScreen(navController: NavController) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(8.dp) // Consistent shape
             )
 
             // Pet list
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f), // Use weight to allow FAB space
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(pets.filter {
+                    // Filtering logic (remains the same)
                     it.name.contains(searchQuery, ignoreCase = true) ||
                             it.breed.contains(searchQuery, ignoreCase = true) ||
                             it.species.contains(searchQuery, ignoreCase = true)
                 }) { pet ->
+                    // Pass correct petID to navigation
                     PetCard(pet) {
-                        navController.navigate("${Routes.PET_DETAILS}/${pet.id}")
+                        navController.navigate("${Routes.PET_DETAILS}/${pet.petID}") // <<< Use petID
                     }
                 }
 
-                // Add extra space at the bottom for FAB
+                // Add extra space at the bottom for FAB visibility when scrolling
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
                 }
@@ -147,12 +141,13 @@ fun PetListScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = PrimaryGreen
+            containerColor = PrimaryGreen,
+            contentColor = Color.White // Ensure icon color contrasts
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add Pet",
-                tint = Color.White
+                contentDescription = "Add Pet"
+                // tint is handled by contentColor
             )
         }
     }
@@ -160,12 +155,15 @@ fun PetListScreen(navController: NavController) {
 
 @Composable
 fun PetCard(pet: Pet, onClick: () -> Unit) {
+    val context = LocalContext.current // Get context for Coil
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface) // Set background color
     ) {
         Row(
             modifier = Modifier
@@ -173,9 +171,15 @@ fun PetCard(pet: Pet, onClick: () -> Unit) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Pet image
-            Image(
-                painter = painterResource(id = pet.imageRes),
+            // Pet image - Use Coil AsyncImage
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    // Try decoding Base64, fallback to placeholder
+                    .data(pet.imageBase64?.let { decodeBase64(it) } ?: R.drawable.logo_icon_colored) // <<< Use placeholder
+                    .crossfade(true)
+                    .build(),
+                placeholder = painterResource(R.drawable.logo_icon_colored), // <<< Use placeholder
+                error = painterResource(R.drawable.logo_icon_colored), // <<< Use placeholder
                 contentDescription = "${pet.name} image",
                 modifier = Modifier
                     .size(80.dp)
@@ -197,14 +201,12 @@ fun PetCard(pet: Pet, onClick: () -> Unit) {
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-
                     Spacer(modifier = Modifier.width(8.dp))
-
                     // Gender icon
                     Icon(
                         imageVector = if (pet.gender == "Male") Icons.Default.Male else Icons.Default.Female,
                         contentDescription = "Gender: ${pet.gender}",
-                        tint = if (pet.gender == "Male") Color.Blue else Color.Red,
+                        tint = if (pet.gender == "Male") Color.Blue else Color.Red, // Consider theme colors
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -224,24 +226,24 @@ fun PetCard(pet: Pet, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
 
-                if (pet.allergies.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    Row {
-                        Text(
-                            text = "Allergies: ",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
-
-                        Text(
-                            text = pet.allergies.joinToString(", "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                // Safely handle nullable allergies list
+                pet.allergies?.let { allergiesList -> // <<< Use let for null check
+                    if (allergiesList.isNotEmpty()) { // <<< Check non-null list
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        Row {
+                            Text(
+                                text = "Allergies: ",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = allergiesList.joinToString(", "), // <<< Use non-null list
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }

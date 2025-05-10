@@ -1,71 +1,116 @@
 [versions]
-agp = "8.9.2"
-kotlin = "2.0.21"
-composeBom = "2025.04.01"
-navigation = "2.8.9"
+agp = "8.9.2" # Android Gradle Plugin
+kotlin = "2.0.21" # Kotlin version
+kotlinComposeCompiler = "2.0.20" # Kotlin Compose Compiler Extension
+
+# AndroidX Core & Lifecycle
 coreKtx = "1.16.0"
 lifecycle = "2.8.7"
 activity = "1.10.1"
-materialIconsExtended = "1.7.8"
-junit = "4.13.2"
-espressoCore = "3.6.1"
-junitExt = "1.2.1"
+
+# Compose
+composeBom = "2025.04.01" # Manages versions of Compose libraries
+navigation = "2.8.9" # Jetpack Navigation Compose
+materialIconsExtended = "1.7.8" # Extended Material Icons for Compose
+
+# Accompanist (Consider checking for latest versions or alternatives as some are deprecated)
+accompanistPager = "0.34.0" # If still needed, check for updates/migration paths
+
+# Datastore
 datastorePreferences = "1.1.1"
-retrofit = "2.9.0"
-okhttp = "4.12.0"
-okhttpLoggingInterceptor = "4.11.0"
+
+# Networking
+retrofit = "2.9.0" # Or latest stable (e.g., 2.11.0)
+okhttp = "4.12.0" # Or latest stable (e.g., 4.12.0)
+# okhttpLoggingInterceptor version is often same as okhttp, but you have it separate
+okhttpLoggingInterceptor = "4.11.0" # Typically matches okhttp, e.g., 4.12.0
+
+# Image Loading
 coil = "2.6.0"
-firebaseBom = "33.13.0"
-googleServicesPlugin = "4.4.2"
-kotlinComposeCompiler = "2.0.20"
-hilt = "2.51.1"
-hiltExt = "1.2.0"
+
+# Firebase
+firebaseBom = "33.13.0" # Or latest stable, e.g., "33.2.0" as of May 2025
+googleServicesPlugin = "4.4.2" # Or latest stable, e.g., "4.4.2"
+
+# Hilt (Dependency Injection)
+hilt = "2.51.1" # Or latest stable, e.g., "2.51.1"
+hiltExt = "1.2.0" # For hilt-navigation-compose and androidx.hilt:hilt-compiler
+
+# Testing
+junit = "4.13.2"
+junitExt = "1.2.1" # AndroidX Test JUnit extension
+espressoCore = "3.6.1"
+
+# --- Potentially unused or to be removed ---
+# composeMaterial = "1.4.1" # This was the version for the Wear OS dependency, REMOVE IF NOT NEEDED
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" } # Ensure this uses your Kotlin version for compiler plugin
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServicesPlugin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 
 [libraries]
+# AndroidX Core & Lifecycle
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
-androidx-ui-text-googlefonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
-androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 
+# Jetpack Compose BOM (Bill of Materials) - manages versions for Compose libraries
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+
+# Jetpack Compose UI
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" } # For tools like @Preview
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+
+# Jetpack Compose Material 3 (Main UI components)
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 
-accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version = "0.34.0" }
-accompanist-pager-indicators = { group = "com.google.accompanist", name = "accompanist-pager-indicators", version = "0.34.0" }
+# Jetpack Compose Navigation
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+# Jetpack Compose Material Icons
+androidx-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" } # Included via BOM
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 
+
+# Accompanist (Check for latest versions or official Compose alternatives)
+accompanist-pager = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accompanistPager" }
+accompanist-pager-indicators = { group = "com.google.accompanist", name = "accompanist-pager-indicators", version.ref = "accompanistPager" }
+
+# Google Fonts for Compose
+androidx-ui-text-googlefonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" } # No version needed if part of BOM, or define one. Latest stable: "1.6.7"
+
+# Datastore
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+
+# Networking - Retrofit & OkHttp
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLoggingInterceptor" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLoggingInterceptor" } # Or use version.ref = "okhttp" if they match
+
+# Image Loading - Coil
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
+# Firebase BOM - Manages versions for Firebase libraries
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" } # Use -ktx version
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" } # Use -ktx version
 
+# Hilt - Dependency Injection
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
-hilt-ext-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltExt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" } # For kapt com.google.dagger:hilt-compiler
 hilt-ext-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltExt" }
+hilt-ext-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltExt" } # For kapt androidx.hilt:hilt-compiler
 
-[bundles]
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitExt" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" } # For Compose tests
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" } # For Compose tests

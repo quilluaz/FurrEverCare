@@ -40,6 +40,18 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onPrivacyPolicyClicked() {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.Navigate(Routes.PRIVACY_POLICY))
+        }
+    }
+
+    fun onDataUsageClicked() {
+        viewModelScope.launch {
+            _navigationEvent.emit(SettingsNavigationEvent.Navigate(Routes.DATA_USAGE))
+        }
+    }
+
     private val _navigationEvent = MutableSharedFlow<SettingsNavigationEvent>()
     val navigationEvent: SharedFlow<SettingsNavigationEvent> = _navigationEvent.asSharedFlow()
 

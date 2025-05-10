@@ -3,7 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.compose)
-
+//    alias(libs.plugins.kotlin.parcelize)
+    id("org.jetbrains.kotlin.plugin.parcelize")
     id("org.jetbrains.kotlin.kapt")
     alias(libs.plugins.hilt)
 }
@@ -13,7 +14,7 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "com.jis_citu.furrevercare"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

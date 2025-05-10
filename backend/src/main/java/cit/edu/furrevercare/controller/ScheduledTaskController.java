@@ -76,9 +76,8 @@ public class ScheduledTaskController {
               } else if (startDate != null && endDate != null) {
                    tasks = scheduledTaskService.getTasksByDateRange(userID, petID, Timestamp.of(startDate), Timestamp.of(endDate));
               } else {
-                   // Default: Maybe get tasks for today? Or return error? Let's default to today.
-                   Timestamp today = Timestamp.now();
-                   tasks = scheduledTaskService.getTasksByDate(userID, petID, today);
+                   // Default: No date params means get ALL tasks for the pet
+                   tasks = scheduledTaskService.getAllTasks(userID, petID);
               }
               return ResponseEntity.ok(tasks);
          } catch (ExecutionException | InterruptedException e) {

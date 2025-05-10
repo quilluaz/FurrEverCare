@@ -86,6 +86,18 @@ public class ScheduledTaskService {
          return tasks;
     }
 
+    // Get all tasks for a pet, ordered by scheduled time
+    public List<ScheduledTask> getAllTasks(String userID, String petID) throws ExecutionException, InterruptedException {
+        List<ScheduledTask> tasks = new ArrayList<>();
+        Query query = getTasksCollection(userID, petID)
+                .orderBy("scheduledDateTime", Query.Direction.ASCENDING); // Order by time
+
+        ApiFuture<QuerySnapshot> querySnapshot = query.get();
+        for (DocumentSnapshot document : querySnapshot.get().getDocuments()) {
+            tasks.add(document.toObject(ScheduledTask.class));
+        }
+        return tasks;
+    }
 
     public String updateScheduledTask(String userID, String petID, String taskID, ScheduledTask task) throws ExecutionException, InterruptedException {
         DocumentReference taskDoc = getTasksCollection(userID, petID).document(taskID);

@@ -5,6 +5,25 @@ import logo from "../assets/logo.png"
 import { useNavigate } from "react-router-dom"
 import AuthService from "../config/AuthService"
 
+// Modal component for success
+const SuccessModal = ({ open, onContinue }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-[#FFF7EC] rounded-2xl shadow-xl p-8 max-w-sm w-full flex flex-col items-center">
+        <h2 className="text-2xl font-bold text-[#042C3C] mb-2 text-center">You're All Signed Up!</h2>
+        <p className="text-[#8A973F] text-center mb-6 font-medium">Log in your credentials to get started.</p>
+        <button
+          className="px-6 py-2 rounded-full font-bold text-white text-sm bg-[#EA6C7B] hover:bg-[#EA6C7B]/90 transition"
+          onClick={onContinue}
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SignUpPage = () => {
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
@@ -13,6 +32,7 @@ const SignUpPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -35,12 +55,17 @@ const SignUpPage = () => {
       
       await AuthService.register(fullName, phone, email, password)
       
-      navigate("/home-pawpedia")
+      setShowSuccessModal(true)
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
+  }
+  
+  const handleContinue = () => {
+    setShowSuccessModal(false);
+    navigate("/about-us");
   }
   
   return (
@@ -161,7 +186,14 @@ const SignUpPage = () => {
             <div className="mt-4 text-center">
               <p className="text-[#042C3C]">
                 Already have an account?{" "}  
-                <a href="/login" className="text-[#EA6C7B] font-medium hover:underline">
+                <a
+                  href="/about-us"
+                  className="font-bold hover:underline"
+                  style={{
+                    color: "#FFF7EC",
+                    textShadow: "0 1px 2px rgba(60,40,10,0.12)"
+                  }}
+                >
                   Log in
                 </a>
               </p>
@@ -169,6 +201,8 @@ const SignUpPage = () => {
           </form>
         </div>
       </div>
+      {/* Success Modal */}
+      <SuccessModal open={showSuccessModal} onContinue={handleContinue} />
     </div>
   )
 }

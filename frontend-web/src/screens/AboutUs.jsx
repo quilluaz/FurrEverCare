@@ -189,6 +189,7 @@ export default function AboutUs() {
               justifyContent: "center",
               alignItems: "center",
               padding: "0 20px",
+              marginLeft: "100px",
             }}
           >
             <Typography

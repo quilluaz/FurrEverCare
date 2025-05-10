@@ -1,8 +1,7 @@
 package com.jis_citu.furrevercare.ui.auth
 
-import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -13,152 +12,218 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isUnspecified
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.jis_citu.furrevercare.R
 import com.jis_citu.furrevercare.navigation.Routes
-import com.jis_citu.furrevercare.theme.Background
-import com.jis_citu.furrevercare.theme.PrimaryGreen
-import com.google.firebase.auth.FirebaseAuth
-import com.jis_citu.furrevercare.model.User
-import com.jis_citu.furrevercare.network.ApiService
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.jis_citu.furrevercare.theme.FurrEverCareTheme
+import com.jis_citu.furrevercare.ui.auth.viewmodel.LoginViewModel
+import com.jis_citu.furrevercare.ui.auth.viewmodel.LoginUiState
+import com.jis_citu.furrevercare.ui.auth.viewmodel.LoginNavigationEvent
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun LoginScreen(navController: NavController) {
-    val auth = FirebaseAuth.getInstance()  // Initialize FirebaseAuth
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+fun LoginScreen(
+    navController: NavController,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
+    val uiState: LoginUiState by viewModel.uiState.collectAsState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Background)
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collectLatest { event ->
+            when (event) {
+                is LoginNavigationEvent.NavigateToHome -> {
+                    navController.navigate(Routes.MAIN) {
+                        popUpTo(Routes.WELCOME_AUTH) { inclusive = true }
+                    }
+                }
+            }
+        }
+    }
+
+    val logoDrawable = if (isSystemInDarkTheme()) {
+        R.drawable.logo_icontext_light
+    } else {
+        R.drawable.logo_icontext_dark
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(16.dp) // Overall padding for the screen content
         ) {
-            IconButton(
-                onClick = { navController.navigateUp() },
-                modifier = Modifier.align(Alignment.Start)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                    contentDescription = "Back"
-                )
+            if (!uiState.isLoading) {
+                IconButton(
+                    onClick = { navController.navigateUp() },
+                    modifier = Modifier.align(Alignment.Start) // Aligns IconButton within the Padded Column
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(48.dp)) // Placeholder for back button space
             }
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .imePadding(), // Handles keyboard overlap
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Spacer(Modifier.weight(0.5f)) // Pushes content down a bit
+
                 Image(
-                    painter = painterResource(id = R.drawable.logo_icontext_colored),
-                    contentDescription = "Login Image",
+                    painter = painterResource(id = logoDrawable),
+                    contentDescription = "FurrEverCare Logo",
                     modifier = Modifier
-                        .size(250.dp)
-                        .padding(bottom = 8.dp),
+                        .fillMaxWidth(0.7f) // Responsive width for the logo
+                        .aspectRatio(2f)    // Maintain aspect ratio
+                        .padding(bottom = 24.dp),
                     contentScale = ContentScale.Fit
                 )
 
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = uiState.email,
+                    onValueChange = viewModel::updateEmail,
                     label = { Text("Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                    enabled = !uiState.isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                        .padding(horizontal = 32.dp, vertical = 8.dp) // Consistent padding for fields
                 )
 
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
+                    value = uiState.password,
+                    onValueChange = viewModel::updatePassword,
                     label = { Text("Password") },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (uiState.passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    enabled = !uiState.isLoading,
                     trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        IconButton(onClick = viewModel::togglePasswordVisibility) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                imageVector = if (uiState.passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (uiState.passwordVisible) "Hide password" else "Show password"
                             )
                         }
                     },
+                    singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                        .padding(horizontal = 32.dp, vertical = 8.dp) // Consistent padding
                 )
 
-                if (errorMessage.isNotEmpty()) {
-                    Text(text = errorMessage, color = Color.Red, style = MaterialTheme.typography.bodySmall)
+                // Error message or Spacer
+                val currentErrorMessage = uiState.errorMessage
+                val bodyMediumLineHeight = MaterialTheme.typography.bodyMedium.lineHeight
+                val defaultSpacerHeight = with(LocalDensity.current) {
+                    if (bodyMediumLineHeight.isSp) {
+                        bodyMediumLineHeight.toDp() + 8.dp // Height of one line text + padding
+                    } else if (!bodyMediumLineHeight.isUnspecified) {
+                        bodyMediumLineHeight.value.dp + 8.dp // If already in dp or other convertible unit
+                    } else {
+                        24.dp // Fallback (approx one line height + padding)
+                    }
                 }
 
-                Button(
+                if (currentErrorMessage != null) {
+                    Text(
+                        text = currentErrorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth() // Ensure it can center within available width
+                            .padding(horizontal = 32.dp, vertical = 8.dp)
+                    )
+                } else {
+                    Spacer(Modifier.height(defaultSpacerHeight)) // Use calculated or fallback height
+                }
+
+                // "Forgot Password?" Button - Centered
+                TextButton(
                     onClick = {
-                        if (email.isNotEmpty() && password.isNotEmpty()) {
-                            auth.signInWithEmailAndPassword(email, password)
-                                .addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        val user = auth.currentUser
-                                        if (user != null) {
-                                            // Fetch user data from the backend after Firebase login
-                                            fetchUserProfile(user.uid, navController)
-                                        }
-                                    } else {
-                                        errorMessage = "Login failed: ${task.exception?.message}"
-                                    }
-                                }
-                        } else {
-                            errorMessage = "Please enter both email and password."
+                        if (!uiState.isLoading) {
+                            navController.navigate(Routes.FORGOT_PASSWORD_EMAIL)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally) // <<< CENTERED
+                    // Consider if padding is still needed or if the parent Column's padding is sufficient
+                    // .padding(horizontal = 32.dp) // Optional: if specific side padding is desired
+                ) {
+                    Text("Forgot Password?", color = MaterialTheme.colorScheme.primary)
+                }
+
+                Spacer(Modifier.height(16.dp)) // Space between "Forgot Password?" and "Log In" button
+
+                Button(
+                    onClick = viewModel::loginUser,
+                    enabled = !uiState.isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
+                        .padding(horizontal = 32.dp) // Consistent padding for button
+                        .height(48.dp)
                 ) {
-                    Text(text = "Log In")
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(text = "Log In")
+                    }
                 }
+                Spacer(Modifier.weight(1f)) // Pushes content up from bottom
             }
         }
     }
 }
 
-fun fetchUserProfile(userId: String, navController: NavController) {
-    val apiService = ApiService.create()
-    apiService.getUser(userId).enqueue(object : Callback<User> {
-        override fun onResponse(call: Call<User>, response: Response<User>) {
-            if (response.isSuccessful) {
-                val user = response.body()
-                if (user != null) {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.WELCOME_AUTH) { inclusive = true }
-                    }
-                } else {
-                    Log.e("LoginError", "User data is null")
-                }
-            } else {
-                Log.e("LoginError", "Failed to fetch user data: ${response.message()}")
-            }
+@Preview(showBackground = true, name = "Login Screen Light")
+@Composable
+fun LoginScreenLightPreview() {
+    FurrEverCareTheme(darkTheme = false) {
+        Surface {
+            LoginScreen(rememberNavController(), hiltViewModel())
         }
+    }
+}
 
-        override fun onFailure(call: Call<User>, t: Throwable) {
-            Log.e("LoginError", "Error fetching user data: ${t.message}")
+@Preview(showBackground = true, name = "Login Screen Dark")
+@Composable
+fun LoginScreenDarkPreview() {
+    FurrEverCareTheme(darkTheme = true) {
+        Surface {
+            LoginScreen(rememberNavController(), hiltViewModel())
         }
-    })
+    }
 }

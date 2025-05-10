@@ -1,59 +1,16 @@
 package com.jis_citu.furrevercare.model
 
-import java.util.UUID
-
 data class Pet(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val species: String,
-    val breed: String,
-    val age: Int,
-    val gender: String,
-    val weight: Double,
-    val imageRes: Int,
-    val allergies: List<String> = emptyList(),
-    val medications: List<Medication> = emptyList(),
-    val vaccinations: List<Vaccination> = emptyList(),
-    val vetVisits: List<VetVisit> = emptyList()
-)
+    // Match backend fields
+    val petID: String = "", // Backend assigns ID, provide default for initial object creation
+    val ownerID: String? = null, // Backend sets this, can be nullable initially
+    val name: String = "",
+    val species: String = "",
+    val breed: String = "",
+    val age: Int = 0,
+    val gender: String = "",
+    val weight: Double = 0.0,
+    val allergies: List<String>? = null, // Match backend List<String>
+    val imageBase64: String? = null, // Match backend Base64 String
 
-data class Medication(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val dosage: String,
-    val frequency: String,
-    val startDate: String,
-    val endDate: String,
-    val notes: String = ""
 )
-
-data class Vaccination(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val date: String,
-    val nextDueDate: String,
-    val notes: String = ""
-)
-
-data class VetVisit(
-    val id: String = UUID.randomUUID().toString(),
-    val date: String,
-    val vetName: String,
-    val reason: String,
-    val diagnosis: String = "",
-    val treatment: String = "",
-    val notes: String = ""
-)
-
-data class Schedule(
-    val id: String = UUID.randomUUID().toString(),
-    val title: String,
-    val date: String,
-    val time: String,
-    val type: ScheduleType,
-    val notes: String = ""
-)
-
-enum class ScheduleType {
-    MEDICATION, VACCINATION, VET_VISIT, GROOMING, OTHER
-}

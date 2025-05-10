@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Logout // Added for logout icon
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Straighten
 import androidx.compose.material3.*
@@ -16,31 +17,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
+// import androidx.compose.ui.platform.LocalContext // No longer needed directly for preferences
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.jis_citu.furrevercare.data.PreferenceManager
+// import com.jis_citu.furrevercare.data.PreferenceManager // No longer directly used
 import com.jis_citu.furrevercare.navigation.Routes
 import com.jis_citu.furrevercare.theme.FurrEverCareTheme
+import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsViewModel // Import ViewModel
+import com.jis_citu.furrevercare.ui.settings.viewmodel.SettingsNavigationEvent // Import Nav Event
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+fun SettingsScreen(
+    navController: NavController,
+    viewModel: SettingsViewModel = hiltViewModel() // Inject ViewModel
+) {
+    // val context = LocalContext.current // Not needed for preference logic anymore
+    val coroutineScope = rememberCoroutineScope() // Still useful for Snackbar
 
-    val isDarkStored by PreferenceManager.isDarkTheme(context).collectAsState(initial = false)
-    var isDarkMode by remember { mutableStateOf(isDarkStored) }
+    // Collect states from ViewModel
+    val isDarkMode by viewModel.isDarkTheme.collectAsState()
+    val selectedUnit by viewModel.unitPreference.collectAsState()
 
-    val unitStored by PreferenceManager.getUnitPreference(context).collectAsState(initial = "Metric")
-    var selectedUnit by remember { mutableStateOf(unitStored) }
-
-    var notificationsEnabled by remember { mutableStateOf(true) }
+    // Local UI states
+    var notificationsEnabled by remember { mutableStateOf(true) } // Assuming this is local or comes from another source
     var showUnitDropdown by remember { mutableStateOf(false) }
     var deleteDialogOpen by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collectLatest { event ->
+            when (event) {
+                is SettingsNavigationEvent.Navigate -> {
+                    navController.navigate(event.route) {
+                        event.popUpToRoute?.let { popUpToRoute ->
+                            popUpTo(popUpToRoute) { inclusive = event.inclusive }
+                        }
+                        launchSingleTop = event.launchSingleTop
+                    }
+                }
+            }
+        }
+    }
+
 
     Box(
         modifier = Modifier
@@ -48,7 +74,6 @@ fun SettingsScreen(navController: NavController) {
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -57,11 +82,10 @@ fun SettingsScreen(navController: NavController) {
             ) {
                 IconButton(onClick = { navController.navigateUp() }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back"
                     )
                 }
-
                 Text(
                     text = "Settings",
                     style = MaterialTheme.typography.titleLarge,
@@ -78,11 +102,8 @@ fun SettingsScreen(navController: NavController) {
                             trailingContent = {
                                 Switch(
                                     checked = isDarkMode,
-                                    onCheckedChange = {
-                                        isDarkMode = it
-                                        coroutineScope.launch {
-                                            PreferenceManager.setDarkTheme(context, it)
-                                        }
+                                    onCheckedChange = { newThemeState ->
+                                        viewModel.setDarkTheme(newThemeState) // Use ViewModel
                                     }
                                 )
                             }
@@ -115,7 +136,7 @@ fun SettingsScreen(navController: NavController) {
                             trailingContent = {
                                 Box {
                                     Text(
-                                        text = "$selectedUnit ▾",
+                                        text = "$selectedUnit ▾", // Use ViewModel state
                                         modifier = Modifier
                                             .clickable { showUnitDropdown = true }
                                             .padding(8.dp)
@@ -128,10 +149,7 @@ fun SettingsScreen(navController: NavController) {
                                             DropdownMenuItem(
                                                 text = { Text(option) },
                                                 onClick = {
-                                                    selectedUnit = option
-                                                    coroutineScope.launch {
-                                                        PreferenceManager.setUnitPreference(context, option)
-                                                    }
+                                                    viewModel.setUnitPreference(option) // Use ViewModel
                                                     showUnitDropdown = false
                                                 }
                                             )
@@ -142,7 +160,7 @@ fun SettingsScreen(navController: NavController) {
                         )
                     }
                 }
-
+                // Privacy Policy Item
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                     SettingsCard {
@@ -150,14 +168,19 @@ fun SettingsScreen(navController: NavController) {
                             icon = Icons.Default.Lock,
                             label = "Privacy Policy",
                             trailingContent = {
-                                IconButton(onClick = { navController.navigate(Routes.PRIVACY_POLICY) }) {
-                                    Icon(Icons.AutoMirrored.Default.ArrowForward, contentDescription = null)
+                                IconButton(onClick = {
+                                    // TODO: Navigate to actual privacy policy screen if it exists
+                                    // navController.navigate(Routes.PRIVACY_POLICY)
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("Privacy Policy clicked") }
+                                }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View Privacy Policy")
                                 }
                             }
                         )
                     }
                 }
 
+                // Data Usage Item
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                     SettingsCard {
@@ -165,13 +188,41 @@ fun SettingsScreen(navController: NavController) {
                             icon = Icons.Default.Storage,
                             label = "Data Usage",
                             trailingContent = {
-                                IconButton(onClick = { navController.navigate(Routes.DATA_USAGE) }) {
-                                    Icon(Icons.AutoMirrored.Default.ArrowForward, contentDescription = null)
+                                IconButton(onClick = {
+                                    // TODO: Navigate to actual data usage screen if it exists
+                                    // navController.navigate(Routes.DATA_USAGE)
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("Data Usage clicked") }
+                                }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "View Data Usage")
                                 }
                             }
                         )
                     }
                 }
+
+
+                item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SettingsCard {
+                        SettingsRow(
+                            icon = Icons.AutoMirrored.Filled.Logout, // Changed icon for clarity
+                            label = "Logout",
+                            textColor = MaterialTheme.colorScheme.error, // Use theme error color
+                            iconTint = MaterialTheme.colorScheme.error,  // Use theme error color
+                            trailingContent = {
+                                // Removed the "Delete" text, click directly on the row
+                            },
+                            onClick = { // Make the whole row clickable for logout
+                                viewModel.logoutUser() // Call ViewModel to handle logout and navigation
+                                // Snackbar can be shown from VM event or here if simpler
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Logged out successfully.")
+                                }
+                            }
+                        )
+                    }
+                }
+
 
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -179,31 +230,30 @@ fun SettingsScreen(navController: NavController) {
                         SettingsRow(
                             icon = Icons.Default.Delete,
                             label = "Delete Account",
-                            textColor = Color.Red,
-                            iconTint = Color.Red,
+                            textColor = MaterialTheme.colorScheme.error,
+                            iconTint = MaterialTheme.colorScheme.error,
                             trailingContent = {
-                                Text(
-                                    text = "Delete",
-                                    color = Color.Red,
-                                    modifier = Modifier
-                                        .clickable { deleteDialogOpen = true }
-                                        .padding(8.dp)
-                                )
-                            }
+                                // Removed the "Delete" text, click directly on the row if preferred
+                                // Or keep it as a more explicit action button
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Delete Account", tint = MaterialTheme.colorScheme.error)
+                            },
+                            onClick = { deleteDialogOpen = true } // Make the whole row clickable
                         )
                     }
                 }
 
+
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "FurrEverCare v1.1.4",
+                        text = "FurrEverCare v1.1.4", // Example version
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        modifier = Modifier.fillMaxWidth(),
-                        fontWeight = FontWeight.Medium
+                        modifier = Modifier.fillMaxWidth(), // Removed .align(Alignment.CenterHorizontally) as LazyColumn handles width
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center // Added for centering text
                     )
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(80.dp)) // For bottom padding
                 }
             }
         }
@@ -216,9 +266,10 @@ fun SettingsScreen(navController: NavController) {
                 confirmButton = {
                     TextButton(onClick = {
                         deleteDialogOpen = false
-                        // TODO: Implement Firebase Auth deletion logic here
+                        // TODO: Implement account deletion logic (call ViewModel method that interacts with backend and Firebase)
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Account deletion initiated (not implemented).") }
                     }) {
-                        Text("Yes, Delete", color = Color.Red)
+                        Text("Yes, Delete", color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
@@ -228,18 +279,20 @@ fun SettingsScreen(navController: NavController) {
                 }
             )
         }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
+// SettingsCard and SettingsRow Composables (from your provided file, minor adjustments for consistency)
 @Composable
 fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Subtle elevation
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant) // Slightly different from background
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { // Adjusted padding
             content()
         }
     }
@@ -249,32 +302,55 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 fun SettingsRow(
     icon: ImageVector,
     label: String,
-    trailingContent: @Composable () -> Unit,
-    textColor: Color = MaterialTheme.colorScheme.onSurface,
-    iconTint: Color = MaterialTheme.colorScheme.onSurface
+    modifier: Modifier = Modifier,
+    textColor: Color = LocalContentColor.current, // Use LocalContentColor
+    iconTint: Color = LocalContentColor.current,  // Use LocalContentColor
+    trailingContent: (@Composable () -> Unit)? = null, // Made optional
+    onClick: (() -> Unit)? = null // Made onClick optional for rows that only display info
 ) {
-    Row(
-        modifier = Modifier
+    val rowModifier = if (onClick != null) {
+        modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp) // Increased padding for better touch target
+    } else {
+        modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    }
+    Row(
+        modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(imageVector = icon, contentDescription = label, tint = iconTint)
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium, // Or bodyLarge
             color = textColor,
             modifier = Modifier.weight(1f)
         )
-        trailingContent()
+        trailingContent?.invoke() // Invoke if not null
     }
 }
 
-@Preview(showBackground = true)
+
+@Preview(showBackground = true, name = "Settings Screen Light")
 @Composable
-fun SettingsScreenPreview() {
-    FurrEverCareTheme {
-        SettingsScreen(rememberNavController())
+fun SettingsScreenLightPreview() {
+    FurrEverCareTheme(darkTheme = false) {
+        Surface {
+            SettingsScreen(navController = rememberNavController())
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Settings Screen Dark")
+@Composable
+fun SettingsScreenDarkPreview() {
+    FurrEverCareTheme(darkTheme = true) {
+        Surface {
+            SettingsScreen(navController = rememberNavController())
+        }
     }
 }

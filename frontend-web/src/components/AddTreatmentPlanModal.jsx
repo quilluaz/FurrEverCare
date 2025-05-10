@@ -11,7 +11,8 @@ export default function AddTreatmentPlanModal({
   petID,
 }) {
   const [formData, setFormData] = useState({ // Initial state
-    name: "", description: "", startDate: "", goal: "",
+    name: "", description: "", startDate: "", endDate: "",
+    goal: "",
     status: "ACTIVE", progressPercentage: "", notes: "", // Initialize progressPercentage as empty string
   });
   const [isLoading, setIsLoading] = useState(false); // Optional loading state
@@ -36,10 +37,28 @@ export default function AddTreatmentPlanModal({
           console.error("Error parsing start date:", error);
         }
       }
+
+      let formattedEndDate = ""; // For endDate
+      if (plan.endDate) {
+        try {
+          const dateObject = plan.endDate.seconds
+            ? new Date(plan.endDate.seconds * 1000)
+            : new Date(plan.endDate);
+          if (!isNaN(dateObject)) {
+            formattedEndDate = dateObject.toISOString().split("T")[0];
+          } else {
+            console.warn("Invalid end date received:", plan.endDate);
+          }
+        } catch (error) {
+          console.error("Error parsing end date:", error);
+        }
+      }
+
       setFormData({
         name: plan.name || "",
         description: plan.description || "",
         startDate: formattedStartDate,
+        endDate: formattedEndDate, // Set endDate
         goal: plan.goal || "",
         status: plan.status || "ACTIVE",
         progressPercentage: plan.progressPercentage || 0,
@@ -50,7 +69,8 @@ export default function AddTreatmentPlanModal({
     } else if (!isEditMode) {
       // Reset form if switching to add mode or closing
       setFormData({
-        name: "", description: "", startDate: "", goal: "",
+        name: "", description: "", startDate: "", endDate: "",
+        goal: "",
         status: "ACTIVE", progressPercentage: 0, notes: "",
       });
       setError(null);
@@ -93,12 +113,21 @@ export default function AddTreatmentPlanModal({
         return;
     }
 
+    const startDateObj = formData.startDate ? new Date(formData.startDate) : null;
+    const endDateObj = formData.endDate ? new Date(formData.endDate) : null;
+
+    if (startDateObj && endDateObj && endDateObj < startDateObj) {
+        setError("End date cannot be before the start date.");
+        setIsLoading(false);
+        return;
+    }
+
     // Prepare data for submission - ensure this matches backend expectations for PUT
     const planDataToSend = {
       name: formData.name,
       description: formData.description,
-      // Format startDate as ISO string if it exists, otherwise null
-      startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+      startDate: startDateObj ? startDateObj.toISOString() : null,
+      endDate: endDateObj ? endDateObj.toISOString() : null, // Add endDate to payload
       goal: formData.goal,
       status: formData.status,
       progressPercentage: formData.progressPercentage,
@@ -140,7 +169,7 @@ export default function AddTreatmentPlanModal({
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-            {/* Form fields (Name, Description, StartDate, Goal, Status, Progress, Notes) */}
+            {/* Form fields (Name, Description, StartDate, EndDate, Goal, Status, Progress, Notes) */}
             {/* Name */}
             <div>
               <label className="block text-sm text-[#042C3C] mb-1">Name</label>
@@ -155,6 +184,11 @@ export default function AddTreatmentPlanModal({
             <div>
               <label className="block text-sm text-[#042C3C] mb-1">Start Date</label>
               <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" required disabled={isLoading} />
+            </div>
+            {/* End Date */}
+            <div>
+              <label className="block text-sm text-[#042C3C] mb-1">End Date</label>
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#EA6C7B] text-gray-500" disabled={isLoading} />
             </div>
             {/* Goal */}
             <div>

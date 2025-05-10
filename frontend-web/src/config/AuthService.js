@@ -1,8 +1,10 @@
 import axios from 'axios';
 import React from "react";
 import { auth, provider, signInWithPopup } from '../config/firebase-config';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'; 
 
-const API_BASE_URL = 'https://furrevercare-deploy-8.onrender.com/api';
+//const API_BASE_URL = 'https://furrevercare-deploy-8.onrender.com/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 let requestInterceptor = null;
 
@@ -77,12 +79,23 @@ class AuthService {
 
   async login(email, password) {
     try {
-      console.log('AuthService: Login attempt:', { email });
+      console.log('AuthService: Login attempt with Firebase:', { email });
+      // Sign in with Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+      console.log('AuthService: Firebase idToken:', idToken ? 'present' : 'null');
+  
+      // Send to backend
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
-        password
+        idToken,
+        firebaseUid: user.uid
       });
       console.log('AuthService: Login response:', response.data);
+  
       const { userId, token } = response.data;
       this.setToken(token);
       const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}`);
@@ -97,14 +110,28 @@ class AuthService {
 
   async register(name, phone, email, password) {
     try {
-      console.log('AuthService: Register attempt:', { name, email });
+      console.log('AuthService: Register attempt with Firebase:', { name, email });
+      // Create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      // Update Firebase user profile with name
+      await updateProfile(user, { displayName: name });
+  
+      // Get Firebase ID token
+      const idToken = await user.getIdToken();
+      console.log('AuthService: Firebase idToken:', idToken ? 'present' : 'null');
+  
+      // Send user data to backend
       const response = await axios.post(`${API_BASE_URL}/auth/register`, {
         name,
         phone,
         email,
-        password
+        firebaseUid: user.uid,
+        idToken
       });
       console.log('AuthService: Register response:', response.data);
+  
       const { userId, token } = response.data;
       this.setToken(token);
       const userResponse = await axios.get(`${API_BASE_URL}/users/${userId}`);

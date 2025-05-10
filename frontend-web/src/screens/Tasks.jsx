@@ -23,51 +23,53 @@ export default function Tasks() {
   const [showDeleteConfModal, setShowDeleteConfModal] = useState(false);
   const [showCreateConfModal, setShowCreateConfModal] = useState(false);
   const [showEditConfModal, setShowEditConfModal] = useState(false);
-  const [isEditConfirmation, setIsEditConfirmation] = useState(true);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  const [taskToEdit, setTaskToEdit] = useState(null);
   const [lastAddedTask, setLastAddedTask] = useState(null);
   const [lastEditedTask, setLastEditedTask] = useState(null);
+
+  const [currentUser, setCurrentUser] = useState(null); // Step 1: Add state for user
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const user = AuthService.getUser();
-  // Prioritize lowercase 'userId' for URL construction to match potential Google Auth token subject
-  const userIdForURL = user?.userId || user?.userID || null;
-  // Keep original userID for potential internal use or display if needed, though userIdForURL is now primary for API calls
-  const userID = user?.userID || user?.userId || null; 
-  const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api";
+  // Step 2: Derive user IDs from currentUser state
+  const userIdForURL = currentUser?.userId || currentUser?.userID || null;
+  const effectUserID = currentUser?.userID || currentUser?.userId || null; 
+
+  //const API_BASE_URL = "https://furrevercare-deploy-8.onrender.com/api";
+  const API_BASE_URL = "http://localhost:8080/api";
   
 
   const urlParams = new URLSearchParams(location.search);
   const initialPetID = urlParams.get("petId");
 
   useEffect(() => {
-    AuthService.init();
-  }, []);
+    AuthService.init(); // Initialize AuthService
+    const userFromAuth = AuthService.getUser(); // Get user after init
+    setCurrentUser(userFromAuth); // Step 1: Set user into state
+  }, []); // Runs once on mount
 
   useEffect(() => {
-    console.log("Tasks.jsx: UserID from AuthService:", userID);
-    console.log("Tasks.jsx: Axios default headers:", axios.defaults.headers.common);
-  }, []);
+    // This effect can be used for logging or other actions when effectUserID changes
+    console.log("Tasks.jsx: UserID from state for effects:", effectUserID);
+    // console.log("Tasks.jsx: Axios default headers:", axios.defaults.headers.common);
+  }, [effectUserID]);
 
   useEffect(() => {
     const fetchUserPets = async () => {
-      if (!userID) {
+      if (!effectUserID) { // Step 3: Use state-derived ID for checks and fetches
         setError("Please log in to manage tasks.");
         setLoading(false);
-        navigate("/about-us");
         return;
       }
-      setLoading(true); // Start loading
+      setLoading(true); 
       setError(null);
       setUserPets([]);
       setSelectedPetId("");
       setTasks([]);
       try {
-        console.log(`Tasks.jsx: Fetching pets for userID: ${userIdForURL}`); // Use userIdForURL
-        const res = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets`); // Use userIdForURL
+        console.log(`Tasks.jsx: Fetching pets for userID: ${userIdForURL}`); 
+        const res = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets`); 
         const fetchedPets = Array.isArray(res.data) ? res.data : [];
         setUserPets(fetchedPets);
 
@@ -82,64 +84,55 @@ export default function Tasks() {
 
         if (!petToSelect && fetchedPets.length === 0) {
           setError("No pets found. Add a pet profile first to manage tasks.");
-          // setLoading(true); // Incorrect: Should stop loading if no pets found
-          setLoading(false); // Correct: Stop loading here
+          setLoading(false); 
         }
-        // Only set loading false here if pets were found and selected
-        // Task loading will handle the rest
-        // setLoading(false); // Let fetchTasks handle final loading state
-
       } catch (err) {
         console.error("Tasks.jsx: Failed to fetch user pets:", err.response || err);
         setError("Failed to load your pets. Please try again.");
         setUserPets([]);
         setSelectedPetId("");
         setTasks([]);
-        // setLoading(True); // Incorrect: Should stop loading on error
-        setLoading(false); // Correct: Stop loading on error
+        setLoading(false); 
         if (err.response?.status === 403) {
           console.log("Tasks.jsx: 403 on fetch pets, clearing auth");
           AuthService.clearAuth();
+          setCurrentUser(null); // Clear user state
           navigate("/pawpedia");
         }
       }
     };
 
     fetchUserPets();
-  }, [userID, initialPetID, navigate]);
+  }, [effectUserID, initialPetID, navigate]); // Step 3: Depend on state-derived ID
 
   const fetchTasks = async () => {
-    if (!userID || !selectedPetId) {
+    if (!effectUserID || !selectedPetId) { // Step 3: Use state-derived ID
       setTasks([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true); // Start loading tasks
+    setLoading(true); 
     setError(null);
-    setTasks([]); // Clear previous tasks while loading new ones
+    setTasks([]); 
 
     try {
-      console.log(`Tasks.jsx: Fetching tasks for userID: ${userIdForURL}, petID: ${selectedPetId}`); // Use userIdForURL
-      const res = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks`); // Use userIdForURL
+      console.log(`Tasks.jsx: Fetching tasks for userID: ${userIdForURL}, petID: ${selectedPetId}`); 
+      const res = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks`); 
       const fetchedTasks = (Array.isArray(res.data) ? res.data : []).map(task => ({
         ...task,
-        scheduledDateTime: task.scheduledDateTime?.seconds
-          ? new Date(task.scheduledDateTime.seconds * 1000 + (task.scheduledDateTime.nanos || 0) / 1000000)
-          : null,
-        completedAt: task.completedAt?.seconds
-          ? new Date(task.completedAt.seconds * 1000 + (task.completedAt.nanos || 0) / 1000000)
-          : null,
+        scheduledDateTime: task.scheduledDateTime ? new Date(task.scheduledDateTime) : null,
+        completedAt: task.completedAt ? new Date(task.completedAt) : null,
       }));
       setTasks(fetchedTasks);
     } catch (err) {
       console.error("Tasks.jsx: Failed to fetch tasks:", err.response || err);
       setError(`Failed to load tasks for the selected pet. Please try again.`);
       setTasks([]);
-      // setLoading(false); // Remove redundant setLoading(false) here
       if (err.response?.status === 403) {
         console.log("Tasks.jsx: 403 on fetch tasks, clearing auth");
         AuthService.clearAuth();
+        setCurrentUser(null); // Clear user state
         navigate("/login");
       }
     } finally {
@@ -148,14 +141,31 @@ export default function Tasks() {
   };
 
   useEffect(() => {
-    fetchTasks();
+    // Only fetch tasks if a user and pet are selected.
+    // The fetchTasks function itself has guards, but this prevents unnecessary calls.
+    if (effectUserID && selectedPetId) {
+        fetchTasks();
+    } else if (effectUserID && userPets.length > 0 && !selectedPetId) {
+        // User is loaded, pets are loaded, but no pet is selected yet.
+        // This might happen if initialPetID is not valid or not provided.
+        setTasks([]); // Clear tasks, user needs to select a pet.
+        setLoading(false);
+    } else if (effectUserID && userPets.length === 0 && !loading && !error) {
+        // User is loaded, pet fetch attempt completed, no pets found for this user.
+        setTasks([]); // Clear tasks.
+        setLoading(false);
+    }
+
     if (selectedPetId) {
       navigate(`${location.pathname}?petId=${selectedPetId}`, { replace: true });
     }
-  }, [userID, selectedPetId, navigate, location.pathname]);
+    // Step 3: Depend on state-derived ID and other relevant states like userPets to manage task fetching lifecycle.
+  }, [effectUserID, selectedPetId, navigate, location.pathname, userPets.length]); 
+
+
 
   const handleAddTaskClick = () => {
-    if (!userID) {
+    if (!effectUserID) { // Step 3: Use state-derived ID
       setError("Please log in to add tasks.");
       navigate("/login");
       return;
@@ -174,77 +184,105 @@ export default function Tasks() {
     setSelectedTask(null);
     setShowAddTaskModal(true);
   };
-
+  
   const handleAddTaskSubmit = async (taskData) => {
-    if (!userID || !selectedPetId) {
+    if (!effectUserID || !selectedPetId) { // Step 3: Use state-derived ID
       setError("User or Pet ID missing. Cannot add task.");
       setShowAddTaskModal(false);
       return;
     }
-
+  
     setShowAddTaskModal(false);
     const tempId = `temp-${Date.now()}`;
     const tempTask = {
       ...taskData,
       taskID: tempId,
       petID: selectedPetId,
-      userID: userID,
+      userID: effectUserID, // Step 3: Use state-derived ID
     };
-
+  
     setTasks(prev => [...prev, tempTask]);
     setLoadingTaskIds(ids => [...ids, tempId]);
     setError(null);
-
+  
     try {
-      const newTaskData = { ...taskData, userID, petID: selectedPetId };
+      const accessToken = AuthService.getToken();
+      if (!accessToken) {
+        throw new Error("Authentication token missing. Please log in again.");
+      }
+  
+      const newTaskData = { ...taskData, userID: effectUserID, petID: selectedPetId }; // Step 3: Use state-derived ID
       if (newTaskData.scheduledDateTime && !(newTaskData.scheduledDateTime instanceof Date)) {
         newTaskData.scheduledDateTime = new Date(newTaskData.scheduledDateTime);
       }
-      console.log("Tasks.jsx: Sending POST request with data:", newTaskData);
-      // Log the specific headers for this request
-      const headers = axios.defaults.headers.common;
-      console.log("Tasks.jsx: Axios headers before POST:", headers);
-      console.log("Tasks.jsx: Authorization Header:", headers['Authorization']); 
-      const res = await axios.post(
-        `${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks`, // Use userIdForURL for consistency
-        newTaskData
-      );
-
-      const realId = res.data; // Expect string ID
+      // Ensure dates are ISO strings for the API
+      if (newTaskData.scheduledDateTime instanceof Date) {
+        newTaskData.scheduledDateTime = newTaskData.scheduledDateTime.toISOString();
+      }
+      if (newTaskData.completedAt instanceof Date) {
+        newTaskData.completedAt = newTaskData.completedAt.toISOString();
+      }
+  
+      if (!userIdForURL || !selectedPetId) {
+        throw new Error(`Invalid URL parameters: userIdForURL=${userIdForURL}, selectedPetId=${selectedPetId}`);
+      }
+  
+      const url = `${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks`;
+      console.log("Tasks.jsx: POST URL:", url);
+      console.log("Tasks.jsx: Sending POST request with data:", JSON.stringify(newTaskData, null, 2));
+      const headers = {
+        ...axios.defaults.headers.common,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      };
+      console.log("Tasks.jsx: Headers for POST request:", headers);
+  
+      const res = await axios.post(url, newTaskData, { headers });
+  
+      const realId = res.data; 
       console.log("Tasks.jsx: Task created with ID:", realId);
-      setTasks(prev => prev.map(task => 
-        task.taskID === tempId ? { ...task, taskID: realId } : task
-      ));
+      // Re-fetch the created task to get its full server representation including proper dates
+      try {
+        const fetchNewTaskRes = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${realId}`);
+        const fetchedNewTaskRaw = fetchNewTaskRes.data;
+        const fetchedNewTaskForState = {
+            ...fetchedNewTaskRaw,
+            scheduledDateTime: fetchedNewTaskRaw.scheduledDateTime ? new Date(fetchedNewTaskRaw.scheduledDateTime) : null,
+            completedAt: fetchedNewTaskRaw.completedAt ? new Date(fetchedNewTaskRaw.completedAt) : null,
+        };
+        setTasks(prev => prev.map(task => 
+            task.taskID === tempId ? fetchedNewTaskForState : task
+        ));
+        setLastAddedTask(fetchedNewTaskForState);
+      } catch (fetchErr) {
+        console.error("Tasks.jsx: Failed to re-fetch newly created task:", fetchErr);
+        // Fallback to temp task if re-fetch fails
+        setTasks(prev => prev.map(task => 
+            task.taskID === tempId ? { ...tempTask, taskID: realId } : task // Update ID at least
+        ));
+        setLastAddedTask({ ...tempTask, taskID: realId });
+      }
       setLoadingTaskIds(ids => ids.filter(id => id !== tempId));
-      setLastAddedTask({ ...tempTask, taskID: realId });
       setShowCreateConfModal(true);
     } catch (err) {
       console.error("Tasks.jsx: Failed to add task:", err.response || err);
+      console.log("Tasks.jsx: Error status:", err.response?.status);
+      console.log("Tasks.jsx: Error data:", err.response?.data);
       setTasks(prev => prev.filter(task => task.taskID !== tempId));
       setLoadingTaskIds(ids => ids.filter(id => id !== tempId));
-      setError(err.response?.data?.message || "Failed to add task. Please try again.");
       if (err.response?.status === 403 || err.response?.status === 401) {
-        console.log("Tasks.jsx: 403/401 on add task, clearing auth");
+        setError("Authentication failed. Your session may have expired. Please log in again.");
         AuthService.clearAuth();
+        setCurrentUser(null); // Clear user state
         navigate("/login");
+      } else {
+        setError(err.response?.data?.message || "Failed to add task. Please try again.");
       }
     }
   };
 
-  const confirmEditTask = (task) => {
-    setTaskToEdit(task);
-    setIsEditConfirmation(true);
-    setShowEditConfModal(true);
-  };
-
-  const proceedWithEdit = () => {
-    setShowEditConfModal(false);
-    setSelectedTask(taskToEdit);
-    setShowEditTaskModal(true);
-  };
-
   const handleEditTaskSubmit = async (taskData) => {
-    if (!userID || !selectedPetId || !selectedTask?.taskID) {
+    if (!effectUserID || !selectedPetId || !selectedTask?.taskID) { // Step 3: Use state-derived ID
       setError("User, Pet, or Task ID missing. Cannot update task.");
       return;
     }
@@ -253,35 +291,66 @@ export default function Tasks() {
     setLoadingTaskIds(ids => [...ids, taskId]);
     setError(null);
 
-    const originalTasks = [...tasks];
+    const optimisticallyUpdatedTask = { 
+      ...selectedTask, 
+      ...taskData,
+      scheduledDateTime: taskData.scheduledDateTime ? new Date(taskData.scheduledDateTime) : null,
+      completedAt: taskData.completedAt ? new Date(taskData.completedAt) : null 
+    };
     setTasks(prev => prev.map(task => 
-      task.taskID === taskId ? { ...task, ...taskData } : task
+      task.taskID === taskId ? optimisticallyUpdatedTask : task
     ));
 
+    const updatedTaskDataForAPI = { 
+      ...selectedTask, 
+      ...taskData, 
+      userID: effectUserID, // Step 3: Use state-derived ID
+      petID: selectedPetId 
+    };
+    if (updatedTaskDataForAPI.scheduledDateTime instanceof Date) {
+      updatedTaskDataForAPI.scheduledDateTime = updatedTaskDataForAPI.scheduledDateTime.toISOString();
+    }
+    if (updatedTaskDataForAPI.completedAt instanceof Date) {
+      updatedTaskDataForAPI.completedAt = updatedTaskDataForAPI.completedAt.toISOString();
+    }
+
     try {
-      // Ensure updatedTaskData uses the consistent ID format
-      const updatedTaskData = { ...selectedTask, ...taskData, userID: userIdForURL, petID: selectedPetId }; // Use userIdForURL
-      if (updatedTaskData.scheduledDateTime && !(updatedTaskData.scheduledDateTime instanceof Date)) {
-        updatedTaskData.scheduledDateTime = new Date(updatedTaskData.scheduledDateTime);
-      }
-      console.log("Tasks.jsx: Sending PUT request with data:", updatedTaskData);
-      console.log("Tasks.jsx: Axios headers before PUT:", axios.defaults.headers.common);
+      console.log("Tasks.jsx: Sending PUT request with data:", updatedTaskDataForAPI);
       await axios.put(
-        `${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${taskId}`, // Use userIdForURL
-        updatedTaskData
+        `${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${taskId}`,
+        updatedTaskDataForAPI
       );
+
+      try {
+        const fetchRes = await axios.get(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${taskId}`);
+        const rawFetchedTask = fetchRes.data;
+        const fetchedTaskForState = {
+          ...rawFetchedTask,
+          scheduledDateTime: rawFetchedTask.scheduledDateTime ? new Date(rawFetchedTask.scheduledDateTime) : null,
+          completedAt: rawFetchedTask.completedAt ? new Date(rawFetchedTask.completedAt) : null,
+        };
+        
+        setTasks(prev => prev.map(t => t.taskID === taskId ? fetchedTaskForState : t));
+        setLastEditedTask(fetchedTaskForState); 
+      } catch (fetchError) {
+        console.error("Tasks.jsx: Failed to re-fetch task after update:", fetchError);
+        setLastEditedTask(optimisticallyUpdatedTask); 
+      }
+
       setLoadingTaskIds(ids => ids.filter(id => id !== taskId));
-      setLastEditedTask(updatedTaskData);
-      setIsEditConfirmation(false);
-      setShowEditConfModal(true);
+      setShowEditConfModal(true); 
+
     } catch (err) {
       console.error("Tasks.jsx: Failed to update task:", err.response || err);
-      setTasks(originalTasks);
+      setTasks(prev => prev.map(task => 
+        task.taskID === taskId ? selectedTask : task 
+      ));
       setLoadingTaskIds(ids => ids.filter(id => id !== taskId));
       setError(err.response?.data?.message || "Failed to update task. Please try again.");
       if (err.response?.status === 403 || err.response?.status === 401) {
         console.log("Tasks.jsx: 403/401 on update task, clearing auth");
         AuthService.clearAuth();
+        setCurrentUser(null); // Clear user state
         navigate("/login");
       }
     } finally {
@@ -295,7 +364,7 @@ export default function Tasks() {
   };
 
   const handleDeleteTask = async () => {
-    if (!userID || !selectedPetId || !taskToDelete?.taskID) {
+    if (!effectUserID || !selectedPetId || !taskToDelete?.taskID) { // Step 3: Use state-derived ID
       setError("User, Pet, or Task ID missing. Cannot delete task.");
       return;
     }
@@ -310,7 +379,7 @@ export default function Tasks() {
     try {
       console.log("Tasks.jsx: Sending DELETE request for taskID:", taskId);
       console.log("Tasks.jsx: Axios headers before DELETE:", axios.defaults.headers.common);
-      await axios.delete(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${taskId}`); // Use userIdForURL
+      await axios.delete(`${API_BASE_URL}/users/${userIdForURL}/pets/${selectedPetId}/scheduledTasks/${taskId}`); 
       setLoadingTaskIds(ids => ids.filter(id => id !== taskId));
       setTaskToDelete(null);
     } catch (err) {
@@ -321,6 +390,7 @@ export default function Tasks() {
       if (err.response?.status === 403 || err.response?.status === 401) {
         console.log("Tasks.jsx: 403/401 on delete task, clearing auth");
         AuthService.clearAuth();
+        setCurrentUser(null); // Clear user state
         navigate("/login");
       }
     }
@@ -350,19 +420,23 @@ export default function Tasks() {
             <h2 className="text-3xl md:text-4xl font-bold text-[#042C3C] flex-shrink-0">
               Scheduled Tasks
             </h2>
-            {/* Conditional Rendering for Pet Selection Area - Revised Logic */}
-            {loading && userPets.length === 0 ? ( // Primary condition: Initial pet loading
+            {loading && userPets.length === 0 && !currentUser ? (
+              <div className="flex items-center ml-2">
+                <Loader className="h-4 w-4 text-[#EA6C7B] animate-spin mr-2" />
+                <p className="text-sm text-gray-500">Loading user & pets...</p>
+              </div>
+            ) : loading && userPets.length === 0 && currentUser ? (
               <div className="flex items-center ml-2">
                 <Loader className="h-4 w-4 text-[#EA6C7B] animate-spin mr-2" />
                 <p className="text-sm text-gray-500">Loading pets...</p>
               </div>
-            ) : userPets.length > 0 ? ( // Pets are loaded, show dropdown
+            ) : userPets.length > 0 ? (
               <select
                 id="pet-select"
                 value={selectedPetId}
                 onChange={handlePetChange}
                 className="block w-full md:w-auto pl-3 pr-8 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-[#EA6C7B] focus:border-[#EA6C7B] rounded-md text-sm bg-white text-[#042C3C]"
-                disabled={loading} // Disable if tasks are still loading
+                disabled={loading} 
                 aria-label="Select a Pet">
                 {selectedPetId === "" && (
                   <option value="" disabled>
@@ -375,15 +449,15 @@ export default function Tasks() {
                   </option>
                 ))}
               </select>
-            ) : !loading && userPets.length === 0 && userID && !error ? ( // Explicitly check !loading for "No pets found"
+            ) : !loading && userPets.length === 0 && effectUserID && !error ? (
               <p className="text-sm text-gray-500 ml-2"></p>
-            ) : null /* Other cases like not logged in */ }
+            ) : null }
           </div>
 
           <button
             className="flex items-center gap-2 px-4 py-1.5 bg-[#EA6C7B] text-white rounded-full text-sm hover:bg-[#EA6C7B]/90 transition disabled:opacity-50 disabled:cursor-not-allowed self-end md:self-center"
             onClick={handleAddTaskClick}
-            disabled={!userID || !selectedPetId || loading || loadingTaskIds.length > 0}
+            disabled={!effectUserID || !selectedPetId || loading || loadingTaskIds.length > 0}
           >
             <Plus className="h-4 w-4" />
             Add Task
@@ -396,52 +470,40 @@ export default function Tasks() {
           </p>
         )}
 
-        {/* --- Start of Changes --- */}
-        {/* Prioritize loading state */}
         {loading ? (
           <div className="flex flex-col items-center py-10">
             <Loader className="h-8 w-8 text-[#EA6C7B] animate-spin" />
             <p className="mt-2 text-gray-500 text-sm">
-              {userPets.length === 0 ? "Loading pets..." : "Loading tasks..."}
+              {(!currentUser) ? "Initializing user..." : (userPets.length === 0 && !error) ? "Loading pets..." : "Loading tasks..."}
             </p>
           </div>
         ) 
-        /* Then, prioritize error state (if not loading) */
         : error ? (
-          // Error is already displayed above, so this block can be empty or show a generic message if needed
-          // Keeping it minimal to avoid redundancy with the error display above
           <div className="flex flex-col items-center py-10">
-             {/* Optionally add a generic message here if needed when error is present */}
-             {/* <p className="text-gray-500 text-sm">An error occurred.</p> */}
+            
           </div>
         )
-        /* If not loading and no error, check for no tasks */
-        : tasks.length === 0 && selectedPetId ? (
+        : tasks.length === 0 && selectedPetId && effectUserID ? (
           <div className="flex flex-col items-center py-10">
             <p className="text-gray-500 text-sm">
               No tasks scheduled for {userPets.find((p) => p.petID === selectedPetId)?.name || "this pet"} yet.
             </p>
           </div>
         ) 
-        /* If not loading, no error, and no pet selected (but pets exist) */
-        : !selectedPetId && userID && userPets.length > 0 ? (
+        : !selectedPetId && effectUserID && userPets.length > 0 ? (
           <div className="flex flex-col items-center py-10">
             <p className="text-gray-500 text-sm">
               Please select a pet from the dropdown above to view their tasks.
             </p>
           </div>
         ) 
-        /* If not loading, no error, and not logged in */
-        : !userID ? (
-           // This case might be redundant if the error state handles 'Please log in'
-           // But kept for clarity if other non-error scenarios lead to !userID
+        : !effectUserID && !error ? (
           <div className="flex flex-col items-center py-10">
             <p className="text-gray-500 text-sm">
               Please log in to manage tasks.
             </p>
           </div>
         ) 
-        /* Finally, display tasks if not loading, no error, and tasks exist */
         : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tasks.map((task) => (
@@ -460,15 +522,15 @@ export default function Tasks() {
                   </h2>
                   <div className="flex gap-1 flex-shrink-0">
                     <button
-                      onClick={() => confirmEditTask(task)}
-                      disabled={!userID || isTaskLoading(task.taskID) || !selectedPetId}
+                      onClick={() => { setSelectedTask(task); setShowEditTaskModal(true); }}
+                      disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
                       className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label={`Edit ${task.description || "task"}`}>
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => confirmDeleteTask(task)}
-                      disabled={!userID || isTaskLoading(task.taskID) || !selectedPetId}
+                      disabled={!effectUserID || isTaskLoading(task.taskID) || !selectedPetId}
                       className="p-1 text-gray-500 hover:text-[#EA6C7B] rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label={`Delete ${task.description || "task"}`}>
                       <Trash2 className="h-4 w-4" />
@@ -523,9 +585,6 @@ export default function Tasks() {
             ))}
           </div>
         )}
-        {/* --- End of Changes --- */}
-
-        {/* Modals */} 
       </div>
 
       <AddTaskModal
@@ -533,7 +592,7 @@ export default function Tasks() {
         onClose={() => setShowAddTaskModal(false)}
         onSubmit={handleAddTaskSubmit}
         petId={selectedPetId}
-        userID={userIdForURL} // Pass consistent userIdForURL
+        userID={userIdForURL} 
       />
       <EditTaskModal
         isOpen={showEditTaskModal}
@@ -544,7 +603,7 @@ export default function Tasks() {
         onSubmit={handleEditTaskSubmit}
         task={selectedTask}
         petId={selectedPetId}
-        userID={userIdForURL} // Pass consistent userIdForURL
+        userID={userIdForURL} 
       />
       <DeleteConfTaskModal
         isOpen={showDeleteConfModal}
@@ -561,9 +620,10 @@ export default function Tasks() {
         isOpen={showEditConfModal}
         onClose={() => {
           setShowEditConfModal(false);
-          if (!isEditConfirmation) setLastEditedTask(null);
+          setLastEditedTask(null); 
         }}
-        task={isEditConfirmation ? taskToEdit : lastEditedTask}
+        task={lastEditedTask} 
+        isEditConfirmation={false} 
       />
     </div>
   );

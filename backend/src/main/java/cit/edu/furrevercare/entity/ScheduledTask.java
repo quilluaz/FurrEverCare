@@ -1,6 +1,10 @@
 package cit.edu.furrevercare.entity;
 
 import com.google.cloud.Timestamp; // Use Firestore Timestamp for dates/times
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import cit.edu.furrevercare.config.jackson.TimestampDeserializer;
+import cit.edu.furrevercare.config.jackson.TimestampSerializer;
 
 import java.util.Map;
 
@@ -10,11 +14,18 @@ public class ScheduledTask {
     private String userID; // Link to the User entity
     private TaskType taskType; // Enum: MEDICATION, FEEDING, WALK, VET_VISIT, GROOMING, OTHER
     private String description; // e.g., "Administer Heartworm Pill", "Morning Walk", "Annual Checkup"
+
+    @JsonSerialize(using = TimestampSerializer.class)
+    @JsonDeserialize(using = TimestampDeserializer.class)
     private Timestamp scheduledDateTime; // Date and time the task is scheduled for
+
     private TaskStatus status; // Enum: PENDING, COMPLETED, SKIPPED, OVERDUE
     private String recurrenceRule; // Simple representation for now (e.g., "DAILY", "WEEKLY", "MONTHLY", "NONE")
                                   // Complex recurrence needs more logic
     private String notes; // Optional notes about the task
+
+    @JsonSerialize(using = TimestampSerializer.class)
+    @JsonDeserialize(using = TimestampDeserializer.class)
     private Timestamp completedAt; // Timestamp when the task was marked as completed
 
     // Enum for Task Type
